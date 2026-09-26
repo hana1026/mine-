@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人小說閱讀網</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2256%22%20height%3D%2256%22%20rx%3D%2214%22%20fill%3D%22%23A3AC91%22%2F%3E%3Cg%20transform%3D%22translate%2815%2C15%29%20scale%281.4167%29%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20clip-rule%3D%22evenodd%22%20fill%3D%22%23ffffff%22%20d%3D%22M11.25%204.533A9.707%209.707%200%200%200%206%203a9.735%209.735%200%200%200-3.25.555.75.75%200%200%200-.5.707v14.25a.75.75%200%200%200%201%20.707A8.237%208.237%200%200%201%206%2018.75c1.995%200%203.823.707%205.25%201.886V4.533ZM12.75%2020.636A8.214%208.214%200%200%201%2018%2018.75c.966%200%201.89.166%202.75.47a.75.75%200%200%200%201-.708V4.262a.75.75%200%200%200-.5-.707A9.735%209.735%200%200%200%2018%203a9.707%209.707%200%200%200-5.25%201.533v16.103Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <!-- OpenCC JS for Simplified to Traditional Conversion -->
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .font-serif-tc { font-family: 'Gowun Batang', 'Noto Serif TC', serif; }
+        .font-sans-tc { font-family: 'Noto Sans TC', sans-serif; }
+        .font-system-kai { font-family: "Kaiti TC", "楷體-繁", "標楷體", serif; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .theme-light { background-color: #F0EFE9; color: #3B3D36; } 
+        .theme-sepia { background-color: #E6E4DA; color: #4B473F; } 
+        .theme-rose { background-color: #E8E0DE; color: #454042; }  
+        .theme-mint { background-color: #E1E6DD; color: #333A30; }  
+        .theme-dark { background-color: #2A2C28; color: #C7C8BE; }  
+        .theme-eyecare { background-color: #D3E3D2; color: #38443A; }  
+
+        ::selection { background-color: rgba(163, 172, 145, 0.35); }
+
+        .transition-theme { transition: background-color 0.3s ease, color 0.3s ease; }
+        .app-card-shadow { box-shadow: 0 10px 30px -10px rgba(140, 145, 130, 0.15); }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.FirebaseModules = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut,
+            getFirestore, doc, getDoc, setDoc, onSnapshot, deleteDoc
+        };
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+</head>
+<body class="bg-[#F0EFE9] font-sans-tc text-[#3D3F38] antialiased min-h-screen">
+
+    <div id="app" class="min-h-screen flex flex-col selection:bg-[#D6D0BC] selection:text-[#3D3F38]">
+
+        <!-- ================= NAVBAR ================= -->
+        <header v-if="currentView !== 'reader'" class="bg-[#F0EFE9]/90 backdrop-blur-md border-b border-[#E2E1D8] sticky top-0 z-30 shadow-sm transition-all">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3 cursor-pointer" @click="currentView = 'library'">
+                    <div class="w-10 h-10 rounded-2xl bg-[#A3AC91] flex items-center justify-center text-white shadow-md shadow-[#A3AC91]/20">
+                        <i class="fa-solid fa-book-bookmark text-base"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base text-[#3B3D36] tracking-tight leading-none flex items-center gap-1.5">
+                            <span>個人小說閱讀網</span>
+                            <span v-if="isCloudSynced" class="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="已連接雲端備份"></span>
+                        </h1>
+                        <span class="text-[11px] text-[#9B9C90] font-medium tracking-wide">Personal Novel Reading Space</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <!-- Google Login / Account -->
+                    <button v-if="!currentUser" @click="signInWithGoogle" :disabled="isSigningIn"
+                        class="px-3 py-2 bg-white hover:bg-[#F0EFE9] text-[#5A5D52] rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 active:scale-95 border border-[#D6D4C6] disabled:opacity-60">
+                        <i v-if="isSigningIn" class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                        <i v-else class="fa-brands fa-google text-xs"></i>
+                        <span class="hidden sm:inline">{{ isSigningIn ? '登入中...' : '使用 Google 登入' }}</span>
+                    </button>
+                    <button v-else @click="showHistoryModal = true" title="閱讀紀錄與帳號"
+                        class="pl-1.5 pr-3 py-1.5 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold transition flex items-center space-x-2 active:scale-95 border border-[#D6D4C6]">
+                        <img v-if="currentUser.photoURL" :src="currentUser.photoURL" class="w-6 h-6 rounded-full object-cover" referrerpolicy="no-referrer">
+                        <i v-else class="fa-solid fa-circle-user text-base text-[#8A9678]"></i>
+                        <span class="hidden sm:inline max-w-[100px] truncate">{{ currentUser.displayName || currentUser.email || '我的帳號' }}</span>
+                        <i class="fa-solid fa-clock-rotate-left text-[10px] text-[#8B8C80]"></i>
+                    </button>
+
+                    <button @click="showSyncModal = true" class="px-3 py-2 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 active:scale-95 border border-[#D6D4C6]">
+                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                        <span class="hidden sm:inline">跨裝置同步</span>
+                    </button>
+
+                    <button @click="triggerFileUpload" class="px-3.5 py-2 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span class="hidden sm:inline">匯入 TXT</span>
+                    </button>
+                    <input type="file" ref="fileInput" accept=".txt" multiple class="hidden" @change="handleFileUpload">
+
+                    <button @click="showPasteModal = true" class="px-3 py-2 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-paste"></i>
+                        <span class="hidden sm:inline">貼上文本</span>
+                    </button>
+
+                    <button @click="currentView = 'settings'" class="p-2 text-[#7A7B70] hover:text-[#3B3D36] rounded-xl hover:bg-[#E6E4DA] transition" title="系統與分類設定">
+                        <i class="fa-solid fa-gear text-base"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            
+            <!-- ================= VIEW 1: LIBRARY / BOOKSHELF ================= -->
+            <div v-if="currentView === 'library'" class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+                <!-- Search & Filters -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[#ADA99A]"></i>
+                        <input type="text" v-model="searchQuery" placeholder="搜尋書名或作者..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-[#DDDBD0] rounded-2xl text-xs text-[#3D3F38] focus:outline-none focus:ring-2 focus:ring-[#A3AC91]/50 transition app-card-shadow">
+                    </div>
+
+                    <!-- Sync Status Banner -->
+                    <div class="flex items-center space-x-3 text-xs text-[#8B8C80]">
+                        <span class="bg-[#E6E4DA] px-3 py-1.5 rounded-full font-medium border border-[#D6D4C6] flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate text-[10px]" :class="{ 'fa-spin': isSyncing }"></i>
+                            <span>同步碼：<strong class="text-[#5A5D52] font-mono">{{ syncCode }}</strong></span>
+                        </span>
+                        <span class="text-xs">藏書 <strong class="text-[#8A9678] font-bold">{{ filteredBooks.length }}</strong> 本</span>
+                    </div>
+                </div>
+
+                <!-- Category & Favorite Filter Tabs -->
+                <div class="flex items-center gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+                    <button v-for="cat in fullCategoriesList" :key="cat" @click="selectedCategory = cat" 
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border"
+                        :class="selectedCategory === cat 
+                            ? 'bg-[#8A9678] text-white border-[#8A9678] shadow-sm' 
+                            : 'bg-white text-[#6C6D62] border-[#DDDBD0] hover:bg-[#E6E4DA]'">
+                        <i v-if="cat === '已收藏'" class="fa-solid fa-heart text-red-400 mr-1 text-[11px]"></i>
+                        <span>{{ cat }}</span>
+                        <span v-if="getCategoryCount(cat) > 0" class="ml-1.5 text-[10px] px-1.5 py-0.2 rounded-full"
+                            :class="selectedCategory === cat ? 'bg-white/20 text-white' : 'bg-[#E6E4DA] text-[#8B8C80]'">
+                            {{ getCategoryCount(cat) }}
+                        </span>
+                    </button>
+                    <!-- Manage Categories Button -->
+                    <button @click="showCategoryManagerModal = true" class="px-3 py-1.5 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#7A7B70] rounded-xl text-xs font-semibold transition border border-[#D6D4C6] flex items-center gap-1">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>自訂分類</span>
+                    </button>
+                </div>
+
+                <!-- Empty State -->
+                <div v-if="filteredBooks.length === 0" class="text-center py-20 bg-white/80 rounded-3xl border border-[#DDDBD0] app-card-shadow">
+                    <div class="w-16 h-16 bg-[#E8E0DE] text-[#B08C87] rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-book-open-reader"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-[#3B3D36] mb-1">找不到相關小說</h3>
+                    <p class="text-[#98988C] text-xs max-w-md mx-auto mb-6">嘗試切換分類或搜尋關鍵字，也可以匯入或貼上文章開始閱讀。</p>
+                    <div class="flex items-center justify-center space-x-3">
+                        <button @click="triggerFileUpload" class="px-4 py-2.5 bg-[#8A9678] text-white text-xs font-semibold rounded-xl hover:bg-[#6F7A5E] transition shadow-sm">匯入我的 TXT</button>
+                        <button @click="showPasteModal = true" class="px-4 py-2.5 bg-[#E6E4DA] text-[#5A5D52] text-xs font-semibold rounded-xl hover:bg-[#DAD8CC] transition">貼上文本</button>
+                    </div>
+                </div>
+
+                <!-- Book Cards Grid -->
+                <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <div v-for="book in filteredBooks" :key="book.id" class="group relative bg-white rounded-2xl border border-[#E2E1D8] app-card-shadow hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1 cursor-pointer" @click="openBook(book.id)">
+                        <!-- Book Cover Header -->
+                        <div class="h-44 p-4 flex flex-col justify-between relative overflow-hidden text-[#3D3F38]" :style="book.coverType === 'image' && book.coverImage ? {} : { background: book.coverGradient }">
+                            <img v-if="book.coverType === 'image' && book.coverImage" :src="book.coverImage" class="absolute inset-0 w-full h-full object-cover" alt="">
+                            <div v-if="book.coverType === 'image' && book.coverImage" class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                            <i v-if="!(book.coverType === 'image' && book.coverImage)" class="absolute -right-3 -bottom-4 text-7xl opacity-[0.16] pointer-events-none" :class="getCoverIcon(book)"></i>
+                            <div class="flex justify-between items-start z-10">
+                                <span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-white/80 backdrop-blur-md text-[#4B473F] hover:bg-white transition" @click.stop="openEditBookModal(book)" title="點擊變更分類">
+                                    {{ book.category || '未分類' }} · {{ book.chapters ? book.chapters.length : 0 }} 章
+                                </span>
+                                <div class="flex items-center space-x-1 bg-white/60 backdrop-blur-md p-1 rounded-xl shadow-sm">
+                                    <button @click.stop="openBookInfo(book)" class="p-1 rounded-lg hover:bg-white/60 transition text-[#7A7B70] hover:text-[#3B3D36] text-xs" title="作品簡介">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </button>
+                                    <button @click.stop="toggleFavorite(book)" class="p-1 rounded-lg hover:bg-white/60 transition text-xs" :title="book.isFavorite ? '取消收藏' : '加入收藏'">
+                                        <i class="fa-solid fa-heart transition-colors" :class="book.isFavorite ? 'text-red-500 scale-110' : 'text-[#8B8C80] hover:text-red-400'"></i>
+                                    </button>
+                                    <button @click.stop="openEditBookModal(book)" class="p-1 rounded-lg hover:bg-white/60 transition text-[#7A7B70] hover:text-[#3B3D36] text-xs" title="編輯書籍資訊與分類">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button @click.stop="confirmDeleteBook(book)" class="p-1 rounded-lg hover:bg-white/60 transition text-[#7A7B70] hover:text-red-500 text-xs" title="刪除小說">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="z-10">
+                                <h3 class="font-bold text-sm sm:text-base line-clamp-2 leading-snug font-serif-tc" :class="book.coverType === 'image' && book.coverImage ? 'text-white' : 'text-[#3B3D36]'">{{ book.title }}</h3>
+                                <p class="text-[11px] mt-1 font-medium truncate" :class="book.coverType === 'image' && book.coverImage ? 'text-white/80' : 'text-[#6C6D62]'">{{ book.author || '佚名' }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Book Details -->
+                        <div class="p-3.5 flex-grow flex flex-col justify-between bg-white">
+                            <div class="text-[11px] text-[#8B8C80] mb-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span>閱讀進度</span>
+                                    <span class="font-bold text-[#8A9678]">{{ getBookProgress(book) }}%</span>
+                                </div>
+                                <div class="w-full bg-[#E6E4DA] h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-[#8A9678] h-full rounded-full transition-all" :style="{ width: getBookProgress(book) + '%' }"></div>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-[#9B9C90] truncate">
+                                {{ book.chapters && book.chapters[book.currentChapter] ? book.chapters[book.currentChapter].title : '第 1 章' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 2: NOVEL READER ================= -->
+            <div v-if="currentView === 'reader' && activeBook" class="relative min-h-screen transition-theme" :class="readerThemeClass">
+
+                <!-- Floating Reader Header -->
+                <header class="fixed top-0 left-0 right-0 z-30 transition-transform duration-300" :class="showControls ? 'translate-y-0' : '-translate-y-full'">
+                    <div class="bg-[#2A2C28]/85 backdrop-blur-md text-[#E2E1D8] px-4 py-3 flex items-center justify-between border-b border-white/10 shadow-lg">
+                        
+                        <!-- Left Actions: Home Button & Chapter Info -->
+                        <div class="flex items-center space-x-2 truncate mr-2">
+                            <button @click="closeReader" class="px-3 py-1.5 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm active:scale-95" title="回到首頁/書坊">
+                                <i class="fa-solid fa-house"></i>
+                                <span class="hidden sm:inline">回到首頁</span>
+                            </button>
+
+                            <div class="h-4 w-[1px] bg-white/20 mx-1"></div>
+
+                            <div class="truncate">
+                                <h2 class="font-bold text-xs sm:text-sm truncate font-serif-tc">{{ activeBook.title }}</h2>
+                                <p class="text-[10px] text-[#9B9C90] truncate">{{ activeBook.chapters[activeBook.currentChapter]?.title }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Right Control Actions -->
+                        <div class="flex items-center space-x-1 sm:space-x-2">
+                            <button @click="toggleAutoScroll" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" :class="{ 'text-[#A3AC91] animate-pulse': isAutoScrolling }" title="自動滾動閱讀">
+                                <i class="fa-solid fa-angles-down"></i>
+                            </button>
+                            <button @click="toggleFavorite(activeBook)" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" :class="activeBook.isFavorite ? 'text-red-400' : 'text-white/80'" :title="activeBook.isFavorite ? '已收藏' : '加入收藏'">
+                                <i class="fa-solid fa-heart"></i>
+                            </button>
+                            <button @click="toggleTTS" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" :class="{ 'text-[#A3AC91]': ttsPlaying }" title="語音朗讀">
+                                <i class="fa-solid" :class="ttsPlaying ? 'fa-volume-high' : 'fa-volume-xmark'"></i>
+                            </button>
+                            <button @click="toggleEyeCareMode" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" :class="{ 'text-[#A3AC91]': readerSettings.theme === 'eyecare' }" title="護眼模式（低藍光柔綠色）">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button @click="openEditChapterModal" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" title="編輯本章">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button @click="showTocDrawer = true" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" title="目錄">
+                                <i class="fa-solid fa-list-ul"></i>
+                            </button>
+                            <button @click="showReaderSettings = !showReaderSettings" class="p-2 hover:bg-white/10 rounded-xl transition text-xs" title="閱讀設定">
+                                <i class="fa-solid fa-sliders"></i>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Settings Popup Menu -->
+                <div v-if="showReaderSettings && showControls" class="fixed top-16 right-4 left-4 sm:left-auto sm:w-80 z-40 max-w-full max-h-[calc(100vh-5rem)] overflow-y-auto bg-[#2A2C28]/95 text-[#E2E1D8] backdrop-blur-xl rounded-2xl p-5 shadow-2xl border border-white/10 space-y-5 text-xs animate-fade-in">
+                    <div>
+                        <div class="flex justify-between text-[#9B9C90] mb-2">
+                            <span>字體大小</span>
+                            <span>{{ readerSettings.fontSize }}px</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button @click="adjustFontSize(-1)" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold">A-</button>
+                            <input type="range" min="12" max="32" v-model.number="readerSettings.fontSize" class="w-full accent-[#A3AC91]">
+                            <button @click="adjustFontSize(1)" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 font-bold">A+</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-[#9B9C90] mb-2">
+                            <span>自動滾動速度</span>
+                            <span>{{ autoScrollSpeed }}x</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="range" min="1" max="10" v-model.number="autoScrollSpeed" class="w-full accent-[#A3AC91]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-[#9B9C90] mb-2">莫蘭迪配色</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button @click="readerSettings.theme = 'light'" class="h-8 rounded-lg border bg-[#F0EFE9] text-[#3B3D36] font-medium" :class="readerSettings.theme === 'light' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'">奶油</button>
+                            <button @click="readerSettings.theme = 'sepia'" class="h-8 rounded-lg border bg-[#E6E4DA] text-[#4B473F] font-medium" :class="readerSettings.theme === 'sepia' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'">燕麥</button>
+                            <button @click="readerSettings.theme = 'rose'" class="h-8 rounded-lg border bg-[#E8E0DE] text-[#454042] font-medium" :class="readerSettings.theme === 'rose' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'">莫蘭</button>
+                            <button @click="readerSettings.theme = 'mint'" class="h-8 rounded-lg border bg-[#E1E6DD] text-[#333A30] font-medium" :class="readerSettings.theme === 'mint' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'">鼠尾</button>
+                            <button @click="readerSettings.theme = 'eyecare'" class="h-8 rounded-lg border bg-[#D3E3D2] text-[#38443A] font-medium flex items-center justify-center gap-1" :class="readerSettings.theme === 'eyecare' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'" title="低藍光護眼模式">
+                                <i class="fa-solid fa-eye text-[10px]"></i><span>護眼</span>
+                            </button>
+                            <button @click="readerSettings.theme = 'dark'" class="h-8 rounded-lg border bg-[#2A2C28] text-[#C7C8BE] font-medium" :class="readerSettings.theme === 'dark' ? 'border-[#A3AC91] ring-2 ring-[#A3AC91]/30' : 'border-transparent'">極夜</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-[#9B9C90] mb-2">字體風格</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button @click="readerSettings.fontFamily = 'serif'" class="py-1.5 rounded-lg border font-serif-tc" :class="readerSettings.fontFamily === 'serif' ? 'border-[#A3AC91] bg-[#A3AC91]/20' : 'border-white/10'">襯線 / 明體</button>
+                            <button @click="readerSettings.fontFamily = 'sans'" class="py-1.5 rounded-lg border font-sans-tc" :class="readerSettings.fontFamily === 'sans' ? 'border-[#A3AC91] bg-[#A3AC91]/20' : 'border-white/10'">黑體</button>
+                            <button @click="readerSettings.fontFamily = 'kai'" class="py-1.5 rounded-lg border font-system-kai" :class="readerSettings.fontFamily === 'kai' ? 'border-[#A3AC91] bg-[#A3AC91]/20' : 'border-white/10'">楷體</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="text-[#9B9C90] mb-1">行距</div>
+                            <select v-model.number="readerSettings.lineHeight" class="w-full bg-white/10 rounded-lg p-2 text-xs border border-white/10 focus:outline-none">
+                                <option :value="1.6" class="bg-[#2A2C28]">舒適 (1.6)</option>
+                                <option :value="1.9" class="bg-[#2A2C28]">舒適寬鬆 (1.9)</option>
+                                <option :value="2.3" class="bg-[#2A2C28]">超寬鬆 (2.3)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="text-[#9B9C90] mb-1">版面寬度</div>
+                            <select v-model="readerSettings.maxWidth" class="w-full bg-white/10 rounded-lg p-2 text-xs border border-white/10 focus:outline-none">
+                                <option value="max-w-xl" class="bg-[#2A2C28]">精緻窄版</option>
+                                <option value="max-w-2xl" class="bg-[#2A2C28]">標準版</option>
+                                <option value="max-w-4xl" class="bg-[#2A2C28]">寬版</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-white/10 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-[#C7C8BE] block font-medium">繁簡字體顯示</span>
+                                <span class="text-[10px] text-[#9B9C90]">選擇後將固定偏好</span>
+                            </div>
+                            <div class="flex items-center space-x-1 bg-white/10 p-1 rounded-xl">
+                                <button @click="readerSettings.autoS2T = false" class="px-2.5 py-1 rounded-lg text-[11px] transition" :class="!readerSettings.autoS2T ? 'bg-[#8A9678] text-white font-bold shadow-sm' : 'text-[#9B9C90] hover:text-white'">原字</button>
+                                <button @click="readerSettings.autoS2T = true" class="px-2.5 py-1 rounded-lg text-[11px] transition" :class="readerSettings.autoS2T ? 'bg-[#8A9678] text-white font-bold shadow-sm' : 'text-[#9B9C90] hover:text-white'">固定繁體</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[#C7C8BE]">智能修復換行與句尾</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="readerSettings.smartMergeLines" class="sr-only peer">
+                                <div class="w-8 h-4 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#8A9678]"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reader Content Zone -->
+                <div class="min-h-screen py-20 px-4 sm:px-8 cursor-pointer" @click="toggleControls" ref="readerScrollContainer">
+                    <div :class="[readerSettings.maxWidth, readerFontClass]" class="mx-auto transition-all duration-200 select-text" :style="readerStyle">
+                        
+                        <!-- Chapter Title Header -->
+                        <h1 class="font-bold text-xl sm:text-2xl mb-8 border-b pb-4 border-current/10 opacity-90 font-serif-tc flex items-center justify-between">
+                            <span>{{ activeBook.chapters[activeBook.currentChapter]?.title }}</span>
+                            <button @click.stop="toggleBookmarkCurrentChapter" class="text-xs px-2.5 py-1 rounded-lg bg-current/10 hover:bg-current/20 transition font-sans-tc flex items-center gap-1 font-normal" :title="isCurrentChapterBookmarked ? '移除本章書籤' : '加為書籤'">
+                                <i class="fa-solid fa-bookmark" :class="isCurrentChapterBookmarked ? 'text-[#A3AC91]' : 'opacity-40'"></i>
+                                <span>{{ isCurrentChapterBookmarked ? '已書籤' : '書籤' }}</span>
+                            </button>
+                        </h1>
+
+                        <!-- Novel Body Paragraphs -->
+                        <div class="space-y-5">
+                            <p v-for="(para, idx) in currentParagraphs" :key="idx" 
+                               class="indent-8 tracking-wide leading-relaxed">
+                                {{ para }}
+                            </p>
+                        </div>
+
+                        <!-- Next / Prev Chapter Buttons -->
+                        <div class="mt-16 pt-8 border-t border-current/10 flex items-center justify-between gap-4">
+                            <button @click.stop="prevChapter" :disabled="activeBook.currentChapter === 0" class="px-4 py-2 rounded-xl border border-current/20 hover:bg-current/10 transition disabled:opacity-30 disabled:hover:bg-transparent font-medium text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>上一章</span>
+                            </button>
+                            <span class="text-xs opacity-60 font-mono">{{ activeBook.currentChapter + 1 }} / {{ activeBook.chapters.length }}</span>
+                            <button @click.stop="nextChapter" :disabled="activeBook.currentChapter >= activeBook.chapters.length - 1" class="px-4 py-2 rounded-xl border border-current/20 hover:bg-current/10 transition disabled:opacity-30 disabled:hover:bg-transparent font-medium text-xs flex items-center space-x-2">
+                                <span>下一章</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Reader Footer Bar -->
+                <footer class="fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300" :class="showControls ? 'translate-y-0' : 'translate-y-full'">
+                    <div class="bg-[#2A2C28]/85 backdrop-blur-md text-[#E2E1D8] px-6 py-3 flex items-center justify-between border-t border-white/10 shadow-lg">
+                        <button @click="closeReader" class="text-xs flex items-center gap-1.5 text-[#A3AC91] hover:underline">
+                            <i class="fa-solid fa-house"></i>
+                            <span>首頁</span>
+                        </button>
+
+                        <div class="flex items-center space-x-3 text-xs text-[#9B9C90]">
+                            <button @click="prevChapter" :disabled="activeBook.currentChapter === 0" class="hover:text-white disabled:opacity-30">
+                                <i class="fa-solid fa-chevron-left mr-1"></i>上一章
+                            </button>
+                            <span class="font-mono text-[11px] text-[#C7C8BE]">{{ activeBook.currentChapter + 1 }} / {{ activeBook.chapters.length }}</span>
+                            <button @click="nextChapter" :disabled="activeBook.currentChapter >= activeBook.chapters.length - 1" class="hover:text-white disabled:opacity-30">
+                                下一章<i class="fa-solid fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+
+                        <button @click="showTocDrawer = true" class="text-xs flex items-center gap-1.5 text-[#A3AC91] hover:underline">
+                            <i class="fa-solid fa-list-ul"></i>
+                            <span>目錄</span>
+                        </button>
+                    </div>
+                </footer>
+
+                <!-- TOC Side Drawer Modal -->
+                <div v-if="showTocDrawer" @click.self="showTocDrawer = false" class="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm">
+                    <div class="w-80 max-w-full bg-[#2A2C28] text-[#E2E1D8] h-full flex flex-col p-5 shadow-2xl border-l border-white/10">
+                        <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+                            <h3 class="font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-list-ul text-[#A3AC91]"></i>
+                                <span>章節目錄 ({{ activeBook.chapters.length }} 章)</span>
+                            </h3>
+                            <div class="flex items-center space-x-2">
+                                <button @click="openAddChapterModal" class="px-2.5 py-1 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-lg text-xs font-semibold transition flex items-center gap-1" title="新增章節">
+                                    <i class="fa-solid fa-plus"></i>加章
+                                </button>
+                                <button @click="showTocDrawer = false" class="text-gray-400 hover:text-white p-1">
+                                    <i class="fa-solid fa-xmark text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative mb-3">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                            <input type="text" v-model="tocSearch" placeholder="搜尋章節標題..." class="w-full pl-9 pr-3 py-1.5 bg-white/10 border border-white/10 rounded-xl text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#A3AC91]">
+                        </div>
+
+                        <div class="flex-grow overflow-y-auto space-y-1 pr-1 no-scrollbar">
+                            <div v-for="item in filteredToc" :key="item.originalIndex" 
+                                @click="selectChapter(item.originalIndex)" 
+                                class="group/toc p-2.5 rounded-xl text-xs cursor-pointer transition flex items-center justify-between gap-2"
+                                :class="activeBook.currentChapter === item.originalIndex ? 'bg-[#8A9678] text-white font-bold' : 'hover:bg-white/10 text-gray-300'">
+                                <span class="truncate flex-grow">{{ item.title }}</span>
+                                <i v-if="activeBook.bookmarkedChapter === item.originalIndex" class="fa-solid fa-bookmark text-[10px] shrink-0 text-[#A3AC91]" title="書籤章節"></i>
+                                <i v-if="activeBook.currentChapter === item.originalIndex" class="fa-solid fa-book-open text-[10px] shrink-0"></i>
+                                <button @click.stop="confirmDeleteChapter(item.originalIndex)" class="shrink-0 opacity-0 group-hover/toc:opacity-100 transition p-1 rounded-lg hover:bg-red-500/80 hover:text-white text-[11px]" title="刪除本章">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= VIEW 3: SETTINGS ================= -->
+            <div v-if="currentView === 'settings'" class="max-w-3xl mx-auto px-4 py-8">
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#E2E1D8] app-card-shadow space-y-6">
+                    <div class="flex items-center space-x-3 border-b border-[#E2E1D8] pb-4">
+                        <div class="w-10 h-10 rounded-2xl bg-[#A3AC91]/20 text-[#8A9678] flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-lg text-[#3B3D36]">系統設定與分類管理</h2>
+                            <p class="text-xs text-[#8B8C80]">自訂個人分類、備份與閱讀器預設設定</p>
+                        </div>
+                    </div>
+
+                    <!-- Custom Category Management Section -->
+                    <div class="space-y-3 p-4 bg-[#F0EFE9] rounded-2xl border border-[#DDDBD0]">
+                        <h3 class="font-bold text-xs text-[#3B3D36] flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-tags text-[#8A9678]"></i>
+                                <span>個人小說分類管理</span>
+                            </span>
+                            <button @click="showCategoryManagerModal = true" class="text-xs text-[#8A9678] hover:underline font-semibold">
+                                + 新增 / 編輯分類
+                            </button>
+                        </h3>
+                        <div class="flex flex-wrap gap-2 pt-1">
+                            <span v-for="cat in customCategories" :key="cat" class="px-3 py-1 bg-white border border-[#D6D4C6] rounded-xl text-xs text-[#5A5D52] font-medium flex items-center gap-1.5 shadow-sm">
+                                <span>{{ cat }}</span>
+                                <i @click="startRenameCategory(cat)" class="fa-solid fa-pen text-[10px] text-gray-400 hover:text-[#8A9678] cursor-pointer" title="重新命名"></i>
+                                <i @click="removeCustomCategory(cat)" class="fa-solid fa-xmark text-[10px] text-gray-400 hover:text-red-500 cursor-pointer" title="刪除此分類"></i>
+                            </span>
+                            <span v-if="customCategories.length === 0" class="text-xs text-gray-400">尚未建立任何自訂分類</span>
+                        </div>
+                    </div>
+
+                    <!-- Author Management Section -->
+                    <div class="space-y-3 p-4 bg-[#F0EFE9] rounded-2xl border border-[#DDDBD0]">
+                        <h3 class="font-bold text-xs text-[#3B3D36] flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-feather-pointed text-[#8A9678]"></i>
+                                <span>作者管理</span>
+                            </span>
+                            <button @click="showAuthorManagerModal = true" class="text-xs text-[#8A9678] hover:underline font-semibold">
+                                查看 / 合併作者
+                            </button>
+                        </h3>
+                        <p class="text-[11px] text-[#8B8C80] leading-relaxed">
+                            共 {{ authorList.length }} 位作者。若同一位作者因匯入時拼法不同而出現多筆，可在此重新命名以合併統計。
+                        </p>
+                    </div>
+
+                    <!-- Import Preferences Section -->
+                    <div class="space-y-3 p-4 bg-[#F0EFE9] rounded-2xl border border-[#DDDBD0]">
+                        <h3 class="font-bold text-xs text-[#3B3D36] flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-arrow-down text-[#8A9678]"></i>
+                            <span>匯入偏好設定</span>
+                        </h3>
+
+                        <label class="flex items-center justify-between py-1.5 cursor-pointer">
+                            <span class="text-xs text-[#5A5D52]">
+                                自動偵測作者
+                                <span class="block text-[10px] text-[#9B9C90] mt-0.5">從內文「作者：」標記或檔名（如「書名-作者.txt」）自動填入作者欄位</span>
+                            </span>
+                            <input type="checkbox" v-model="importSettings.autoDetectAuthor" class="w-4 h-4 accent-[#8A9678] flex-shrink-0 ml-3">
+                        </label>
+
+                        <label class="flex items-center justify-between py-1.5 cursor-pointer border-t border-[#DDDBD0]/70 pt-2.5">
+                            <span class="text-xs text-[#5A5D52]">
+                                匯入時自動簡轉繁
+                                <span class="block text-[10px] text-[#9B9C90] mt-0.5">匯入 TXT 時自動將簡體內容轉換為繁體</span>
+                            </span>
+                            <input type="checkbox" v-model="importSettings.autoConvertTraditional" class="w-4 h-4 accent-[#8A9678] flex-shrink-0 ml-3">
+                        </label>
+
+                        <div class="pt-2.5 border-t border-[#DDDBD0]/70">
+                            <label class="text-xs text-[#5A5D52] block mb-1.5">新書預設分類</label>
+                            <select v-model="importSettings.defaultCategory" class="w-full px-3 py-2 bg-white border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                                <option value="未分類">未分類</option>
+                                <option v-for="cat in customCategories" :key="cat" :value="cat">{{ cat }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Library Statistics Section -->
+                    <div class="space-y-3 p-4 bg-[#F0EFE9] rounded-2xl border border-[#DDDBD0]">
+                        <h3 class="font-bold text-xs text-[#3B3D36] flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-simple text-[#8A9678]"></i>
+                            <span>書庫統計</span>
+                        </h3>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-white rounded-xl py-2.5 border border-[#DDDBD0]">
+                                <p class="text-base font-bold text-[#3B3D36]">{{ libraryStats.totalBooks }}</p>
+                                <p class="text-[10px] text-[#9B9C90] mt-0.5">本小說</p>
+                            </div>
+                            <div class="bg-white rounded-xl py-2.5 border border-[#DDDBD0]">
+                                <p class="text-base font-bold text-[#3B3D36]">{{ libraryStats.totalChapters }}</p>
+                                <p class="text-[10px] text-[#9B9C90] mt-0.5">個章節</p>
+                            </div>
+                            <div class="bg-white rounded-xl py-2.5 border border-[#DDDBD0]">
+                                <p class="text-base font-bold text-[#3B3D36]">{{ (libraryStats.totalWords / 10000).toFixed(1) }}萬</p>
+                                <p class="text-[10px] text-[#9B9C90] mt-0.5">總字數</p>
+                            </div>
+                        </div>
+                        <div v-if="libraryStats.byCategory.length" class="space-y-1.5 pt-1">
+                            <div v-for="cat in libraryStats.byCategory" :key="cat.name" class="flex items-center gap-2">
+                                <span class="text-[10px] text-[#5A5D52] w-16 flex-shrink-0 truncate">{{ cat.name }}</span>
+                                <div class="flex-grow bg-white rounded-full h-2 overflow-hidden border border-[#DDDBD0]">
+                                    <div class="h-full bg-[#8A9678] rounded-full" :style="{ width: (cat.count / libraryStats.totalBooks * 100) + '%' }"></div>
+                                </div>
+                                <span class="text-[10px] text-[#9B9C90] w-6 text-right flex-shrink-0">{{ cat.count }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sample Novel Loader -->
+                    <div class="p-4 bg-[#F0EFE9] rounded-2xl border border-[#DDDBD0] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h3 class="font-bold text-xs text-[#3B3D36]">載入測試範例</h3>
+                            <p class="text-[11px] text-[#8B8C80]">快速新增一本示範小說體驗閱讀器功能</p>
+                        </div>
+                        <button @click="loadSampleBook" class="px-3.5 py-2 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold transition whitespace-nowrap shadow-sm">
+                            新增範例小說
+                        </button>
+                    </div>
+
+                    <!-- Data Backup & Restore -->
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-xs text-[#3B3D36] flex items-center gap-1.5">
+                            <i class="fa-solid fa-database text-[#8A9678]"></i>
+                            <span>資料備份與還原</span>
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button @click="exportData" class="p-3 bg-[#E6E4DA] hover:bg-[#DAD8CC] rounded-xl text-xs text-[#5A5D52] font-semibold transition flex items-center justify-center gap-2 border border-[#D6D4C6]">
+                                <i class="fa-solid fa-file-export"></i>
+                                <span>匯出完整 JSON 備份</span>
+                            </button>
+                            <button @click="triggerImportData" class="p-3 bg-[#E6E4DA] hover:bg-[#DAD8CC] rounded-xl text-xs text-[#5A5D52] font-semibold transition flex items-center justify-center gap-2 border border-[#D6D4C6]">
+                                <i class="fa-solid fa-file-import"></i>
+                                <span>匯入 JSON 備份檔</span>
+                            </button>
+                            <input type="file" ref="backupFileInput" accept=".json" class="hidden" @change="importData">
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="pt-4 border-t border-[#E2E1D8]">
+                        <button @click="askClearAllData" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-semibold transition border border-red-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-arrow-up"></i>
+                            <span>清空所有本地資料</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ================= MODAL: CUSTOM CONFIRMATION DIALOG ================= -->
+        <div v-if="confirmDialog.show" @click.self="confirmDialog.show = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex items-center space-x-3 text-red-500">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-[#3B3D36]">{{ confirmDialog.title }}</h3>
+                </div>
+                <p class="text-xs text-[#6C6D62] leading-relaxed whitespace-pre-line">{{ confirmDialog.message }}</p>
+                <div class="flex flex-wrap justify-end gap-2 pt-2">
+                    <button @click="confirmDialog.show = false" class="px-4 py-2 text-xs text-[#5A5D52] bg-[#E6E4DA] hover:bg-[#DAD8CC] rounded-xl font-medium transition">
+                        {{ confirmDialog.cancelLabel }}
+                    </button>
+                    <button v-if="confirmDialog.secondaryAction" @click="executeConfirmSecondaryAction" class="px-4 py-2 text-xs text-[#5A5D52] bg-[#DAD8CC] hover:bg-[#CFCDBF] rounded-xl font-semibold transition">
+                        {{ confirmDialog.secondaryLabel }}
+                    </button>
+                    <button @click="executeConfirmAction" class="px-4 py-2 text-xs text-white bg-red-500 hover:bg-red-600 rounded-xl font-semibold shadow-sm transition">
+                        {{ confirmDialog.actionLabel }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: CATEGORY MANAGER ================= -->
+        <div v-if="showCategoryManagerModal" @click.self="showCategoryManagerModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-[#E2E1D8] pb-3">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-[#8A9678]"></i>
+                        <span>管理個人小說分類</span>
+                    </h3>
+                    <button @click="showCategoryManagerModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" v-model="newCategoryInput" placeholder="輸入新分類名稱..." class="flex-grow px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                    <button @click="addNewCategory" class="px-4 py-2 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold whitespace-nowrap shadow-sm">
+                        新增分類
+                    </button>
+                </div>
+
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <div v-for="cat in customCategories" :key="cat" class="flex justify-between items-center p-2.5 bg-[#F0EFE9] border border-[#DDDBD0] rounded-xl text-xs gap-2">
+                        <template v-if="editingCategoryOriginal === cat">
+                            <input type="text" v-model="categoryEditValue" @keyup.enter="confirmRenameCategory" @keyup.esc="cancelRenameCategory" class="flex-grow px-2 py-1 border border-[#A3AC91] rounded-lg text-xs focus:outline-none" autofocus>
+                            <button @click="confirmRenameCategory" class="text-[#8A9678] hover:text-[#6F7A5E] p-1" title="儲存">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            <button @click="cancelRenameCategory" class="text-gray-400 hover:text-gray-600 p-1" title="取消">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <span class="font-medium text-[#3B3D36]">{{ cat }}</span>
+                            <div class="flex items-center gap-1">
+                                <button @click="startRenameCategory(cat)" class="text-gray-400 hover:text-[#8A9678] p-1" title="重新命名">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button @click="removeCustomCategory(cat)" class="text-gray-400 hover:text-red-500 p-1" title="刪除分類">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button @click="showCategoryManagerModal = false" class="px-4 py-2 text-xs bg-[#8A9678] text-white font-semibold rounded-xl hover:bg-[#6F7A5E]">完成</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: AUTHOR MANAGER ================= -->
+        <div v-if="showAuthorManagerModal" @click.self="showAuthorManagerModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-[#E2E1D8] pb-3">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-feather-pointed text-[#8A9678]"></i>
+                        <span>作者管理</span>
+                    </h3>
+                    <button @click="showAuthorManagerModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-[#8B8C80] leading-relaxed">
+                    重新命名可將同一位作者的不同拼法合併統一，會同步更新此作者名下所有書籍。
+                </p>
+
+                <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    <div v-for="a in authorList" :key="a.name" class="flex justify-between items-center p-2.5 bg-[#F0EFE9] border border-[#DDDBD0] rounded-xl text-xs gap-2">
+                        <template v-if="authorRenameTarget === a.name">
+                            <input type="text" v-model="authorRenameValue" @keyup.enter="confirmRenameAuthor" @keyup.esc="cancelRenameAuthor" class="flex-grow px-2 py-1 border border-[#A3AC91] rounded-lg text-xs focus:outline-none" autofocus>
+                            <button @click="confirmRenameAuthor" class="text-[#8A9678] hover:text-[#6F7A5E] p-1" title="儲存">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            <button @click="cancelRenameAuthor" class="text-gray-400 hover:text-gray-600 p-1" title="取消">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <span class="font-medium text-[#3B3D36] truncate">{{ a.name }}</span>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <span class="text-[10px] text-[#9B9C90]">{{ a.count }} 本</span>
+                                <button @click="startRenameAuthor(a.name)" class="text-gray-400 hover:text-[#8A9678] p-1" title="重新命名 / 合併">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <span v-if="authorList.length === 0" class="text-xs text-gray-400">尚未有任何書籍</span>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button @click="showAuthorManagerModal = false" class="px-4 py-2 text-xs bg-[#8A9678] text-white font-semibold rounded-xl hover:bg-[#6F7A5E]">完成</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: PASTE TEXT NOVEL ================= -->
+        <div v-if="showPasteModal" @click.self="showPasteModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-xl w-full p-6 app-card-shadow space-y-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-[#E2E1D8] pb-3">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-paste text-[#8A9678]"></i>
+                        <span>貼上文字建立小說</span>
+                    </h3>
+                    <button @click="showPasteModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="text-xs font-semibold text-[#5A5D52] block mb-1">小說名稱</label>
+                        <input type="text" v-model="pasteForm.title" placeholder="請輸入書名" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-[#5A5D52] block mb-1">作者</label>
+                        <input type="text" v-model="pasteForm.author" placeholder="佚名" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">選擇分類</label>
+                    <select v-model="pasteForm.category" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                        <option value="未分類">未分類</option>
+                        <option v-for="cat in customCategories" :key="cat" :value="cat">{{ cat }}</option>
+                    </select>
+
+                    <div class="mt-2 flex gap-2">
+                        <input type="text" v-model="pasteForm.newCategoryInline" placeholder="或輸入全新分類名稱..." class="flex-grow px-3 py-1.5 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                        <button type="button" @click="addInlineCategoryToPaste" class="px-3 py-1.5 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold border border-[#D6D4C6] transition whitespace-nowrap">新增並選擇</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-[#5A5D52]">小說內文</label>
+                        <button @click="convertPasteFormToTrad" class="text-xs text-[#8A9678] hover:underline font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-language"></i>
+                            <span>簡體轉繁體</span>
+                        </button>
+                    </div>
+                    <textarea v-model="pasteForm.content" rows="8" placeholder="在此直接貼上長篇文本，系統將自動解析章節目錄..." class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91] font-mono leading-relaxed"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button @click="showPasteModal = false" class="px-4 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-xl">取消</button>
+                    <button @click="savePastedBook" class="px-4 py-2 text-xs bg-[#8A9678] text-white font-semibold rounded-xl hover:bg-[#6F7A5E] transition shadow-sm">新增至書坊</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: EDIT BOOK INFO & CATEGORY ================= -->
+        <div v-if="showBookEditModal" @click.self="showBookEditModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-[#E2E1D8] pb-3">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-[#8A9678]"></i>
+                        <span>編輯書籍資訊與分類</span>
+                    </h3>
+                    <button @click="showBookEditModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">小說名稱</label>
+                    <input type="text" v-model="editBookForm.title" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">作者</label>
+                    <input type="text" v-model="editBookForm.author" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">分類標籤</label>
+                    <select v-model="editBookForm.category" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                        <option value="未分類">未分類</option>
+                        <option v-for="cat in customCategories" :key="cat" :value="cat">{{ cat }}</option>
+                    </select>
+
+                    <!-- Direct Inline New Category Addition -->
+                    <div class="mt-2 flex gap-2">
+                        <input type="text" v-model="editBookForm.newCategoryInline" placeholder="或輸入全新分類名稱..." class="flex-grow px-3 py-1.5 border border-[#DDDBD0] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                        <button type="button" @click="addInlineCategoryToEdit" class="px-3 py-1.5 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold border border-[#D6D4C6] transition whitespace-nowrap">新增並套用</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1.5">封面樣式</label>
+                    <div class="flex items-center space-x-1 bg-[#F0EFE9] p-1 rounded-xl w-fit mb-3">
+                        <button type="button" @click="editBookForm.coverType = 'gradient'" class="px-3 py-1 rounded-lg text-[11px] font-semibold transition" :class="editBookForm.coverType !== 'image' ? 'bg-[#8A9678] text-white shadow-sm' : 'text-[#7A7B70] hover:text-[#3B3D36]'">預設顏色</button>
+                        <button type="button" @click="editBookForm.coverType = 'image'" class="px-3 py-1 rounded-lg text-[11px] font-semibold transition" :class="editBookForm.coverType === 'image' ? 'bg-[#8A9678] text-white shadow-sm' : 'text-[#7A7B70] hover:text-[#3B3D36]'">自訂圖片</button>
+                    </div>
+
+                    <div v-if="editBookForm.coverType !== 'image'" class="grid grid-cols-6 gap-2">
+                        <button v-for="(g, idx) in gradients" :key="idx" type="button" @click="editBookForm.coverGradient = g"
+                            class="h-9 rounded-lg border-2 transition"
+                            :class="editBookForm.coverGradient === g ? 'border-[#8A9678] scale-105 shadow-sm' : 'border-transparent hover:border-[#DDDBD0]'"
+                            :style="{ background: g }" title="選擇此封面顏色">
+                        </button>
+                    </div>
+
+                    <div v-else class="space-y-2">
+                        <div class="h-32 rounded-xl overflow-hidden border border-[#DDDBD0] bg-[#F0EFE9] flex items-center justify-center">
+                            <img v-if="editBookForm.coverImage" :src="editBookForm.coverImage" class="w-full h-full object-cover" alt="封面預覽">
+                            <span v-else class="text-[11px] text-[#ADA99A]">尚未上傳圖片</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" @click="triggerBookCoverUpload" class="flex-grow px-3 py-2 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold border border-[#D6D4C6] transition">上傳圖片</button>
+                            <button v-if="editBookForm.coverImage" type="button" @click="editBookForm.coverImage = null" class="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl border border-[#DDDBD0]">移除圖片</button>
+                        </div>
+                        <input type="file" ref="bookCoverInput" accept="image/*" class="hidden" @change="handleCoverImageUpload">
+                        <p class="text-[10px] text-[#ADA99A]">圖片會自動壓縮以節省儲存空間。</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="favoriteCheck" v-model="editBookForm.isFavorite" class="accent-[#8A9678] rounded">
+                    <label for="favoriteCheck" class="text-xs text-[#5A5D52] cursor-pointer font-medium">加入我的最愛 / 收藏</label>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">作品簡介 / 文案</label>
+                    <textarea v-model="editBookForm.description" rows="4" placeholder="寫點簡介或文案，方便日後回來時想起這本書在講什麼..." class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#A3AC91] resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button @click="showBookEditModal = false" class="px-4 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-xl">取消</button>
+                    <button @click="saveBookInfo" class="px-4 py-2 text-xs bg-[#8A9678] text-white font-semibold rounded-xl hover:bg-[#6F7A5E] transition shadow-sm">儲存變更</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: BOOK INFO / SYNOPSIS (dedicated read view) ================= -->
+        <div v-if="showBookInfoModal && infoBook" @click.self="showBookInfoModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-lg w-full app-card-shadow overflow-hidden max-h-[85vh] flex flex-col">
+                <!-- Cover Banner -->
+                <div class="h-40 shrink-0 relative flex items-end p-5" :style="infoBook.coverType === 'image' && infoBook.coverImage ? {} : { background: infoBook.coverGradient }">
+                    <img v-if="infoBook.coverType === 'image' && infoBook.coverImage" :src="infoBook.coverImage" class="absolute inset-0 w-full h-full object-cover" alt="">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                    <button @click="showBookInfoModal = false" class="absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="relative z-10 text-white">
+                        <h3 class="font-bold text-lg font-serif-tc leading-snug">{{ infoBook.title }}</h3>
+                        <p class="text-xs text-white/80 mt-1">{{ infoBook.author || '佚名' }} · {{ infoBook.category || '未分類' }} · {{ infoBook.chapters ? infoBook.chapters.length : 0 }} 章</p>
+                    </div>
+                </div>
+
+                <!-- Synopsis Body -->
+                <div class="p-5 overflow-y-auto flex-grow">
+                    <h4 class="text-xs font-bold text-[#8A9678] tracking-wide mb-2">作品簡介</h4>
+                    <p v-if="infoBook.description" class="text-sm text-[#4B473F] leading-relaxed whitespace-pre-wrap">{{ infoBook.description }}</p>
+                    <p v-else class="text-xs text-[#ADA99A] italic">這本書還沒有簡介，點下方「編輯簡介」寫一點吧。</p>
+                </div>
+
+                <!-- Actions -->
+                <div class="p-4 border-t border-[#E2E1D8] flex justify-between items-center shrink-0 bg-[#FAFAF7]">
+                    <button @click="showBookInfoModal = false; openEditBookModal(infoBook)" class="px-3.5 py-2 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] rounded-xl text-xs font-semibold transition">
+                        <i class="fa-solid fa-pen mr-1"></i>編輯簡介
+                    </button>
+                    <button @click="showBookInfoModal = false; openBook(infoBook.id)" class="px-4 py-2 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold transition">
+                        <i class="fa-solid fa-book-open mr-1"></i>開始閱讀
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: CLOUD SYNC CODE INPUT ================= -->
+        <div v-if="showSyncModal" @click.self="showSyncModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-down text-[#8A9678]"></i>
+                        <span>跨裝置雲端同步</span>
+                    </h3>
+                    <button @click="showSyncModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="p-3 bg-[#F0EFE9] rounded-xl border border-[#DDDBD0] flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-[#9B9C90] block">目前裝置同步碼</span>
+                        <strong class="font-mono text-xs text-[#5A5D52]">{{ syncCode }}</strong>
+                    </div>
+                    <button @click="copySyncCode" class="px-2.5 py-1 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] text-xs font-semibold rounded-lg transition border border-[#D6D4C6]">
+                        複製
+                    </button>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-2.5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <span class="text-xs font-semibold text-amber-800 block">章節同步異常？</span>
+                            <span class="text-[10px] text-amber-700 block mt-0.5">若其他裝置章節數變成 0，點此把本機所有書籍完整重新上傳雲端</span>
+                        </div>
+                        <button @click="forceFullCloudResync" :disabled="isSyncing || syncProgress.active" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition whitespace-nowrap disabled:opacity-50 flex-shrink-0">
+                            <i class="fa-solid fa-rotate mr-1" :class="{ 'fa-spin': syncProgress.active }"></i>強制完整同步
+                        </button>
+                    </div>
+
+                    <!-- 完整同步進度：讓使用者清楚看到「現在傳到第幾本」而不是只能乾等 -->
+                    <div v-if="syncProgress.active" class="space-y-1">
+                        <div class="w-full bg-white rounded-full h-2 overflow-hidden border border-amber-200">
+                            <div class="h-full bg-amber-500 rounded-full transition-all" :style="{ width: (syncProgress.total ? syncProgress.current / syncProgress.total * 100 : 0) + '%' }"></div>
+                        </div>
+                        <p class="text-[10px] text-amber-700">同步中... 已完成 {{ syncProgress.current }} / {{ syncProgress.total }} 本，請留在此頁面</p>
+                    </div>
+                    <p v-else-if="lastFullSyncAt" class="text-[10px] text-amber-700">
+                        <i class="fa-solid fa-circle-check mr-1"></i>上次強制完整同步時間：{{ lastFullSyncAt }}
+                    </p>
+                </div>
+
+                <div class="p-3 bg-[#F0EFE9] rounded-xl border border-[#DDDBD0] space-y-2.5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <span class="text-xs font-semibold text-[#3B3D36] block">確認雲端是否真的同步好了</span>
+                            <span class="text-[10px] text-[#8B8C80] block mt-0.5">直接檢查雲端實際存了多少章節，而不是用猜的</span>
+                        </div>
+                        <button @click="verifyCloudSync" :disabled="syncVerifyResult && syncVerifyResult.checking" class="px-3 py-2 bg-[#8A9678] hover:bg-[#6F7A5E] text-white rounded-xl text-xs font-semibold transition whitespace-nowrap disabled:opacity-50 flex-shrink-0">
+                            <i class="fa-solid fa-magnifying-glass mr-1" :class="{ 'fa-spin': syncVerifyResult && syncVerifyResult.checking }"></i>檢查同步狀態
+                        </button>
+                    </div>
+
+                    <div v-if="syncVerifyResult && !syncVerifyResult.checking && syncVerifyResult.checkedAt" class="text-xs">
+                        <p class="text-[10px] text-[#9B9C90] mb-1.5">檢查時間：{{ syncVerifyResult.checkedAt }}（雲端共 {{ syncVerifyResult.totalBooks }} 本）</p>
+                        <div v-if="syncVerifyResult.totalBooks === 0" class="text-amber-600 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>雲端目前沒有任何書籍紀錄，請勿在其他裝置點擊「連線載入舊雲端書庫」，以免把本機書庫清空</span>
+                        </div>
+                        <div v-else-if="syncVerifyResult.problems.length === 0" class="text-emerald-600 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>全部書籍章節內容都完整，可以放心到其他裝置載入</span>
+                        </div>
+                        <div v-else class="space-y-1.5">
+                            <p class="text-red-500 font-semibold">發現 {{ syncVerifyResult.problems.length }} 本書雲端章節不完整：</p>
+                            <div class="max-h-32 overflow-y-auto space-y-1 pr-1">
+                                <div v-for="p in syncVerifyResult.problems" :key="p.title" class="flex justify-between bg-white rounded-lg px-2.5 py-1.5 border border-red-100">
+                                    <span class="text-[#3B3D36] truncate mr-2">{{ p.title }}</span>
+                                    <span class="text-red-500 flex-shrink-0">{{ p.actual }} / {{ p.expected }} 章</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-[#8B8C80]">建議按上方「強制完整同步」重新上傳一次</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-[#5A5D52] block mb-1">若要在新裝置載入舊資料，請輸入舊裝置的同步碼：</label>
+                    <input type="text" v-model="inputSyncCode" placeholder="例如：k-reader-xxxx" class="w-full px-3 py-2 border border-[#DDDBD0] rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button @click="showSyncModal = false" class="px-4 py-2 text-xs text-gray-600 hover:bg-gray-100 rounded-xl">取消</button>
+                    <button @click="loadCloudDataByCode" class="px-4 py-2 text-xs bg-[#8A9678] text-white font-semibold rounded-xl hover:bg-[#6F7A5E]">連線載入舊雲端書庫</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: ACCOUNT & READING HISTORY ================= -->
+        <div v-if="showHistoryModal" @click.self="showHistoryModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 app-card-shadow space-y-4 max-h-[85vh] overflow-y-auto flex flex-col">
+                <div class="flex justify-between items-center shrink-0">
+                    <h3 class="font-bold text-base text-[#3B3D36] flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-[#8A9678]"></i>
+                        <span>閱讀紀錄</span>
+                    </h3>
+                    <button @click="showHistoryModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Account row -->
+                <div v-if="currentUser" class="p-3 bg-[#F0EFE9] rounded-xl border border-[#DDDBD0] flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <img v-if="currentUser.photoURL" :src="currentUser.photoURL" class="w-9 h-9 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
+                        <i v-else class="fa-solid fa-circle-user text-3xl text-[#8A9678] flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-[#3B3D36] truncate">{{ currentUser.displayName || '已登入' }}</p>
+                            <p class="text-[10px] text-[#9B9C90] truncate">{{ currentUser.email }}</p>
+                        </div>
+                    </div>
+                    <button @click="signOutUser" class="px-2.5 py-1.5 bg-[#E6E4DA] hover:bg-[#DAD8CC] text-[#5A5D52] text-xs font-semibold rounded-lg transition border border-[#D6D4C6] flex-shrink-0">
+                        登出
+                    </button>
+                </div>
+                <p class="text-[10px] text-[#9B9C90] shrink-0">閱讀紀錄會在登入 Google 帳號後自動記錄與同步；登出後僅保留本機顯示。</p>
+
+                <!-- History list -->
+                <div class="flex-grow overflow-y-auto space-y-2 pr-1 -mr-1 min-h-[100px]">
+                    <div v-if="readingHistory.length === 0" class="text-center py-10 text-xs text-[#B7B8AC]">
+                        <i class="fa-solid fa-book-open text-2xl mb-2 block"></i>
+                        尚無閱讀紀錄
+                    </div>
+                    <button v-for="entry in readingHistory" :key="entry.bookId" @click="openHistoryEntry(entry)"
+                        class="w-full text-left p-3 bg-[#F7F6F1] hover:bg-[#EFEEE4] rounded-xl border border-[#E2E1D8] transition flex items-center justify-between gap-3 group">
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-[#3B3D36] truncate">{{ entry.bookTitle }}</p>
+                            <p class="text-[10px] text-[#9B9C90] truncate mt-0.5">{{ entry.chapterTitle }}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-[10px] text-[#B7B8AC]">{{ formatHistoryTime(entry.timestamp) }}</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-[#C5C6BA] group-hover:text-[#8A9678] transition"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAL: ADD / EDIT CHAPTER ================= -->
+        <div v-if="showChapterModal" @click.self="showChapterModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-gray-900">{{ isEditingChapter ? '編輯章節' : '新增章節' }}</h3>
+                    <button @click="showChapterModal = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 block mb-1">章節標題</label>
+                    <input type="text" v-model="chapterForm.title" placeholder="例如：第四章 新的征途" class="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#A3AC91]">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-gray-500 block">章節內容</label>
+                        <button @click="convertChapterFormToTrad" class="text-xs text-[#8A9678] hover:underline font-medium">簡轉繁</button>
+                    </div>
+                    <textarea v-model="chapterForm.content" rows="10" placeholder="在此輸入或貼上章節內文..." class="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#A3AC91] font-mono text-xs"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button @click="showChapterModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl">取消</button>
+                    <button @click="saveChapter" class="px-4 py-2 text-sm bg-[#8A9678] text-white font-medium rounded-xl hover:bg-[#6F7A5E]">儲存章節</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Alert -->
+        <div v-if="toastMessage" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#2A2C28] text-[#E2E1D8] px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center space-x-2 border border-white/10 animate-bounce">
+            <i class="fa-solid fa-circle-check text-[#A3AC91]"></i>
+            <span>{{ toastMessage }}</span>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                // Main Views & State
+                const currentView = ref('library'); 
+                const books = ref([]);
+                const activeBookId = ref(null);
+                const searchQuery = ref('');
+                const selectedCategory = ref('全部');
+
+                // Custom Categories Management
+                const customCategories = ref([]);
+                const newCategoryInput = ref('');
+                const showCategoryManagerModal = ref(false);
+
+                const fullCategoriesList = computed(() => {
+                    return ['全部', '已收藏', ...customCategories.value];
+                });
+
+                // Custom UI Confirmation Modal Dialog State (Replaces native blocked window.confirm)
+                const confirmDialog = ref({
+                    show: false,
+                    title: '',
+                    message: '',
+                    action: null,
+                    actionLabel: '確定執行',
+                    secondaryAction: null,
+                    secondaryLabel: '',
+                    cancelLabel: '取消'
+                });
+
+                const triggerConfirm = (title, message, action, options = {}) => {
+                    confirmDialog.value = {
+                        show: true,
+                        title,
+                        message,
+                        action,
+                        actionLabel: options.actionLabel || '確定執行',
+                        secondaryAction: options.secondaryAction || null,
+                        secondaryLabel: options.secondaryLabel || '',
+                        cancelLabel: options.cancelLabel || '取消'
+                    };
+                };
+
+                const executeConfirmAction = () => {
+                    if (confirmDialog.value.action) {
+                        confirmDialog.value.action();
+                    }
+                    confirmDialog.value.show = false;
+                };
+
+                const executeConfirmSecondaryAction = () => {
+                    if (confirmDialog.value.secondaryAction) {
+                        confirmDialog.value.secondaryAction();
+                    }
+                    confirmDialog.value.show = false;
+                };
+
+                // Additional Features State
+                const showControls = ref(true);
+                const showTocDrawer = ref(false);
+                const showReaderSettings = ref(false);
+                const showPasteModal = ref(false);
+                const showBookEditModal = ref(false);
+                const showBookInfoModal = ref(false);
+                const infoBook = ref(null);
+                const showChapterModal = ref(false);
+                const showSyncModal = ref(false);
+                const isEditingChapter = ref(false);
+                const tocSearch = ref('');
+                const toastMessage = ref('');
+                const fileInput = ref(null);
+                const backupFileInput = ref(null);
+                const bookCoverInput = ref(null);
+
+                // Auto Scroll Feature
+                const isAutoScrolling = ref(false);
+                const autoScrollSpeed = ref(3);
+                let autoScrollTimer = null;
+
+                // Remote Sync Lock & Content Dirty Tracking Flags
+                let isRemoteUpdate = false;
+                let cloudSaveTimeout = null;
+                let isSavingToCloud = false;
+                // 記錄目前這台裝置最後一次「確定收到」的雲端版本時間戳，用來偵測其他裝置的較新變更
+                let lastKnownCloudUpdatedAt = null;
+                // 本裝置是否已完成「第一次」把雲端資料完整下載並合併到本機。
+                // 在這個動作完成之前，絕對不能把本機資料寫回雲端——
+                // 否則新裝置在還沒收到別人書籍的那零點幾秒內，就會用自己（較少）的書籍把雲端蓋掉。
+                let cloudSyncReady = false;
+                // 目前這台裝置正在監聽哪一份雲端文件（呼叫它可以取消訂閱）。
+                // 切換同步碼時一定要先取消舊的監聽、再訂閱新的，
+                // 不然裝置會一直聽著「舊同步碼」的文件，完全收不到新同步碼那邊其他裝置之後的更新，
+                // 卻仍照常把本機資料存回新同步碼——這正是換裝置後原本裝置書籍消失的成因。
+                let unsubscribeCloudListener = null;
+                const dirtyBookContentIds = ref(new Set());
+                // 記錄「這台裝置真的按過刪除」的書籍 id，並會一起同步到雲端。
+                // 只有出現在這份名單裡的書，合併雲端資料時才會真的被移除；
+                // 沒有紀錄、卻在雲端書單裡消失的書，一律視為同步不完整，保留本機版本並自動補傳，
+                // 不會被誤判成「應該刪除」——這是修正「換裝置後舊裝置的書被覆蓋」的關鍵。
+                const deletedBookIds = ref(new Set());
+
+                // Cloud Sync State Initialization
+                const savedSyncCode = localStorage.getItem('novel_reader_sync_code');
+                const initialSyncCode = savedSyncCode ? savedSyncCode : ('k-reader-' + Math.random().toString(36).substring(2, 8));
+                const syncCode = ref(initialSyncCode);
+                localStorage.setItem('novel_reader_sync_code', syncCode.value);
+
+                const inputSyncCode = ref('');
+                const isSyncing = ref(false);
+                const isCloudSynced = ref(false);
+                let db = null;
+                let auth = null;
+
+                // Google 登入 / 閱讀紀錄
+                const currentUser = ref(null); // { uid, displayName, email, photoURL }
+                const isSigningIn = ref(false);
+                const showHistoryModal = ref(false);
+                const readingHistory = ref([]);
+                let unsubscribeHistoryListener = null;
+                let historySaveTimeout = null;
+
+                // 同步進度與驗證結果，讓使用者能清楚知道「現在同步到哪了」「上次做完是什麼時候」「有沒有書漏傳」
+                const syncProgress = ref({ active: false, current: 0, total: 0 });
+                const lastFullSyncAt = ref(localStorage.getItem('novel_reader_last_full_sync') || '');
+                const syncVerifyResult = ref(null); // null = 尚未檢查過；否則為 { checking, ok, problems: [{title, expected, actual}] }
+
+                // Form States
+                const pasteForm = ref({ title: '', author: '', content: '', category: '未分類', newCategoryInline: '' });
+                const editBookForm = ref({ id: '', title: '', author: '', category: '未分類', isFavorite: false, newCategoryInline: '', coverGradient: '', coverType: 'gradient', coverImage: null, description: '' });
+                const chapterForm = ref({ title: '', content: '' });
+
+                // 匯入設定（可自訂）：控制匯入 TXT 時的行為
+                const importSettings = ref({
+                    autoDetectAuthor: true,      // 自動從檔名或內文偵測作者
+                    autoConvertTraditional: false, // 匯入時自動將簡體轉為繁體
+                    defaultCategory: '未分類'     // 匯入新書時預設套用的分類
+                });
+
+                // 分類管理：重新命名用的暫存狀態
+                const editingCategoryOriginal = ref('');
+                const categoryEditValue = ref('');
+
+                // 作者管理
+                const showAuthorManagerModal = ref(false);
+                const authorRenameTarget = ref('');
+                const authorRenameValue = ref('');
+
+                // OpenCC S2T Converter
+                let s2tConverter = null;
+                const s2tCache = new Map();
+
+                const initOpenCC = () => {
+                    if (window.OpenCC && window.OpenCC.Converter) {
+                        try {
+                            s2tConverter = window.OpenCC.Converter({ from: 'cn', to: 'tw' });
+                        } catch (e) {
+                            console.error('OpenCC init error:', e);
+                        }
+                    }
+                };
+
+                const convertToTradText = (str) => {
+                    if (!str) return '';
+                    if (s2tCache.has(str)) return s2tCache.get(str);
+                    if (!s2tConverter) initOpenCC();
+                    if (s2tConverter) {
+                        const converted = s2tConverter(str);
+                        if (s2tCache.size > 500) s2tCache.clear();
+                        s2tCache.set(str, converted);
+                        return converted;
+                    }
+                    return str;
+                };
+
+                // Text To Speech (TTS)
+                const ttsPlaying = ref(false);
+                let currentUtterance = null;
+
+                // Preset Cover Gradients (Morandi Palette) - varied hues so covers don't look alike
+                const gradients = [
+                    'linear-gradient(135deg, #DCE3D3 0%, #B9C7A8 100%)', // 鼠尾草綠
+                    'linear-gradient(135deg, #D6E1E6 0%, #A9C1C9 100%)', // 霧霾藍
+                    'linear-gradient(135deg, #EAD9D6 0%, #D3B6B0 100%)', // 灰粉玫瑰
+                    'linear-gradient(135deg, #EDDCC9 0%, #D3AE8D 100%)', // 陶土棕
+                    'linear-gradient(135deg, #E2D7E2 0%, #C3A8C3 100%)', // 灰紫
+                    'linear-gradient(135deg, #E6E4C9 0%, #CBC791 100%)', // 橄欖綠
+                    'linear-gradient(135deg, #E7E1D4 0%, #C9BFA9 100%)', // 石頭灰褐
+                    'linear-gradient(135deg, #D2E3DC 0%, #A0C2B4 100%)', // 霧灰藍綠
+                    'linear-gradient(135deg, #F0E4CC 0%, #DCC49B 100%)', // 暖沙棕
+                    'linear-gradient(135deg, #DDE1E6 0%, #B3BAC7 100%)', // 石板藍灰
+                    'linear-gradient(135deg, #F0DEDE 0%, #DDBABA 100%)', // 淺莫蘭迪粉
+                    'linear-gradient(135deg, #DAE0D0 0%, #B3C09E 100%)', // 苔蘚綠
+                    'linear-gradient(135deg, #E3D8CE 0%, #BFA898 100%)', // 可可棕灰
+                    'linear-gradient(135deg, #D9DEC8 0%, #ABB88F 100%)', // 亞麻綠
+                    'linear-gradient(135deg, #E8DCE6 0%, #C9A9C4 100%)', // 淺莓紫
+                    'linear-gradient(135deg, #CFDEDD 0%, #99B8B5 100%)', // 湖水灰綠
+                    'linear-gradient(135deg, #E6D9CE 0%, #C6A78E 100%)', // 焦糖杏
+                    'linear-gradient(135deg, #DADDD0 0%, #AEB49C 100%)', // 橄欖灰
+                    'linear-gradient(135deg, #E9DCDC 0%, #CBACA9 100%)', // 乾燥玫瑰
+                    'linear-gradient(135deg, #D7DEE9 0%, #A6B3C9 100%)'  // 丁香藍紫
+                ];
+
+                // Decorative cover motifs so cards feel distinct beyond just color
+                const coverIcons = [
+                    'fa-solid fa-feather', 'fa-solid fa-moon', 'fa-solid fa-leaf', 'fa-solid fa-star',
+                    'fa-solid fa-cloud', 'fa-solid fa-mountain', 'fa-solid fa-water', 'fa-solid fa-seedling',
+                    'fa-solid fa-compass', 'fa-solid fa-gem', 'fa-solid fa-fan', 'fa-solid fa-dove'
+                ];
+                const hashString = (str) => {
+                    let hash = 0;
+                    for (let i = 0; i < str.length; i++) {
+                        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+                    }
+                    return hash;
+                };
+                const getCoverIcon = (book) => {
+                    if (!book || !book.id) return coverIcons[0];
+                    return coverIcons[hashString(book.id) % coverIcons.length];
+                };
+
+                // Reader Preferences
+                const readerSettings = ref({
+                    fontSize: 18,
+                    lineHeight: 1.9,
+                    fontFamily: 'serif',
+                    theme: 'sepia',
+                    maxWidth: 'max-w-2xl',
+                    autoS2T: false,
+                    smartMergeLines: true
+                });
+
+                // Eye-care (護眼) quick toggle - remembers the theme used before switching
+                const previousReaderTheme = ref('sepia');
+                const toggleEyeCareMode = () => {
+                    if (readerSettings.value.theme === 'eyecare') {
+                        readerSettings.value.theme = previousReaderTheme.value || 'sepia';
+                    } else {
+                        previousReaderTheme.value = readerSettings.value.theme;
+                        readerSettings.value.theme = 'eyecare';
+                    }
+                };
+
+                const adjustFontSize = (delta) => {
+                    const newSize = readerSettings.value.fontSize + delta;
+                    if (newSize >= 12 && newSize <= 36) {
+                        readerSettings.value.fontSize = newSize;
+                    }
+                };
+
+                // Compute Active Book
+                const activeBook = computed(() => {
+                    return books.value.find(b => b.id === activeBookId.value) || null;
+                });
+
+                // Filtered Bookshelf
+                const filteredBooks = computed(() => {
+                    return books.value.filter(b => {
+                        if (selectedCategory.value === '已收藏' && !b.isFavorite) return false;
+                        if (selectedCategory.value !== '全部' && selectedCategory.value !== '已收藏' && (b.category || '未分類') !== selectedCategory.value) return false;
+
+                        if (searchQuery.value.trim()) {
+                            const q = searchQuery.value.toLowerCase();
+                            const titleMatch = b.title.toLowerCase().includes(q);
+                            const authorMatch = b.author && b.author.toLowerCase().includes(q);
+                            if (!titleMatch && !authorMatch) return false;
+                        }
+                        return true;
+                    });
+                });
+
+                const getCategoryCount = (cat) => {
+                    if (cat === '全部') return books.value.length;
+                    if (cat === '已收藏') return books.value.filter(b => b.isFavorite).length;
+                    return books.value.filter(b => (b.category || '未分類') === cat).length;
+                };
+
+                const getBookProgress = (book) => {
+                    if (!book || !book.chapters || book.chapters.length === 0) return 0;
+                    const prog = Math.round(((book.currentChapter + 1) / book.chapters.length) * 100);
+                    return Math.min(100, Math.max(0, prog));
+                };
+
+                // Custom Category Actions
+                const addNewCategory = () => {
+                    const catName = newCategoryInput.value.trim();
+                    if (!catName) return;
+                    if (!customCategories.value.includes(catName)) {
+                        customCategories.value.push(catName);
+                        newCategoryInput.value = '';
+                        showToast(`已新增分類「${catName}」`);
+                    } else {
+                        showToast('此分類名稱已存在');
+                    }
+                };
+
+                const addInlineCategoryToEdit = () => {
+                    const catName = editBookForm.value.newCategoryInline ? editBookForm.value.newCategoryInline.trim() : '';
+                    if (!catName) return;
+                    if (!customCategories.value.includes(catName)) {
+                        customCategories.value.push(catName);
+                    }
+                    editBookForm.value.category = catName;
+                    editBookForm.value.newCategoryInline = '';
+                    showToast(`已新增並套用分類「${catName}」`);
+                };
+
+                const addInlineCategoryToPaste = () => {
+                    const catName = pasteForm.value.newCategoryInline ? pasteForm.value.newCategoryInline.trim() : '';
+                    if (!catName) return;
+                    if (!customCategories.value.includes(catName)) {
+                        customCategories.value.push(catName);
+                    }
+                    pasteForm.value.category = catName;
+                    pasteForm.value.newCategoryInline = '';
+                    showToast(`已新增並選擇分類「${catName}」`);
+                };
+
+                const removeCustomCategory = (catName) => {
+                    triggerConfirm(
+                        '刪除分類',
+                        `確定要刪除分類「${catName}」嗎？屬於此分類的小說將變更為「未分類」。`,
+                        () => {
+                            customCategories.value = customCategories.value.filter(c => c !== catName);
+                            books.value.forEach(b => {
+                                if (b.category === catName) b.category = '未分類';
+                            });
+                            if (selectedCategory.value === catName) selectedCategory.value = '全部';
+                            showToast(`已刪除分類「${catName}」`);
+                        }
+                    );
+                };
+
+                // 開始編輯（重新命名）某個分類
+                const startRenameCategory = (catName) => {
+                    editingCategoryOriginal.value = catName;
+                    categoryEditValue.value = catName;
+                };
+
+                const cancelRenameCategory = () => {
+                    editingCategoryOriginal.value = '';
+                    categoryEditValue.value = '';
+                };
+
+                // 確認重新命名分類：同步更新所有屬於此分類的書籍
+                const confirmRenameCategory = () => {
+                    const oldName = editingCategoryOriginal.value;
+                    const newName = categoryEditValue.value.trim();
+                    if (!newName || newName === oldName) {
+                        cancelRenameCategory();
+                        return;
+                    }
+                    if (customCategories.value.includes(newName)) {
+                        showToast('已有相同名稱的分類存在');
+                        return;
+                    }
+                    customCategories.value = customCategories.value.map(c => c === oldName ? newName : c);
+                    books.value.forEach(b => {
+                        if (b.category === oldName) b.category = newName;
+                    });
+                    if (selectedCategory.value === oldName) selectedCategory.value = newName;
+                    if (importSettings.value.defaultCategory === oldName) importSettings.value.defaultCategory = newName;
+                    showToast(`分類已重新命名為「${newName}」`);
+                    cancelRenameCategory();
+                };
+
+                // 作者管理：依作者統計書籍數量，供設定頁使用
+                const authorList = computed(() => {
+                    const map = new Map();
+                    books.value.forEach(b => {
+                        const name = (b.author || '佚名').trim() || '佚名';
+                        map.set(name, (map.get(name) || 0) + 1);
+                    });
+                    return Array.from(map.entries())
+                        .map(([name, count]) => ({ name, count }))
+                        .sort((a, b) => b.count - a.count);
+                });
+
+                const startRenameAuthor = (name) => {
+                    authorRenameTarget.value = name;
+                    authorRenameValue.value = name;
+                };
+
+                const cancelRenameAuthor = () => {
+                    authorRenameTarget.value = '';
+                    authorRenameValue.value = '';
+                };
+
+                // 合併／重新命名作者：把所有同名作者的書籍改成新名稱，方便整理不同拼法的同一位作者
+                const confirmRenameAuthor = () => {
+                    const oldName = authorRenameTarget.value;
+                    const newName = authorRenameValue.value.trim();
+                    if (!newName || newName === oldName) {
+                        cancelRenameAuthor();
+                        return;
+                    }
+                    let count = 0;
+                    books.value.forEach(b => {
+                        const currentName = (b.author || '佚名').trim() || '佚名';
+                        if (currentName === oldName) {
+                            b.author = newName;
+                            count++;
+                        }
+                    });
+                    showToast(`已將 ${count} 本書的作者更新為「${newName}」`);
+                    cancelRenameAuthor();
+                };
+
+                // 書庫統計：總書籍數、總章節數、總字數，以及各分類的書籍數量
+                const libraryStats = computed(() => {
+                    const totalBooks = books.value.length;
+                    let totalChapters = 0;
+                    let totalWords = 0;
+                    books.value.forEach(b => {
+                        const chapters = b.chapters || [];
+                        totalChapters += chapters.length;
+                        chapters.forEach(ch => {
+                            totalWords += ch.content ? ch.content.length : 0;
+                        });
+                    });
+
+                    const catMap = new Map();
+                    books.value.forEach(b => {
+                        const cat = b.category || '未分類';
+                        catMap.set(cat, (catMap.get(cat) || 0) + 1);
+                    });
+                    const byCategory = Array.from(catMap.entries())
+                        .map(([name, count]) => ({ name, count }))
+                        .sort((a, b) => b.count - a.count);
+
+                    return { totalBooks, totalChapters, totalWords, byCategory };
+                });
+
+                // Auto-Scroll Functions
+                const toggleAutoScroll = () => {
+                    if (isAutoScrolling.value) {
+                        stopAutoScroll();
+                        showToast('已關閉自動滾動');
+                    } else {
+                        startAutoScroll();
+                        showToast('已開啟自動滾動');
+                    }
+                };
+
+                const cancelScrollFrame = () => {
+                    if (autoScrollTimer) {
+                        cancelAnimationFrame(autoScrollTimer);
+                        autoScrollTimer = null;
+                    }
+                };
+
+                const startAutoScroll = () => {
+                    cancelScrollFrame();
+                    isAutoScrolling.value = true;
+                    let lastTime = null;
+                    const step = (timestamp) => {
+                        // 保險：isAutoScrolling 一旦被改成 false，下一個影格就直接停止，
+                        // 不再排下一次 requestAnimationFrame，確保絕對停得下來。
+                        if (!isAutoScrolling.value) return;
+                        if (lastTime === null) lastTime = timestamp;
+                        const delta = timestamp - lastTime;
+                        if (delta >= 16) {
+                            window.scrollBy({ top: autoScrollSpeed.value * (delta / 100), behavior: 'auto' });
+                            lastTime = timestamp;
+                        }
+                        autoScrollTimer = requestAnimationFrame(step);
+                    };
+                    autoScrollTimer = requestAnimationFrame(step);
+                };
+
+                const stopAutoScroll = () => {
+                    cancelScrollFrame();
+                    isAutoScrolling.value = false;
+                };
+
+                const isCurrentChapterBookmarked = computed(() => {
+                    if (!activeBook.value) return false;
+                    return activeBook.value.bookmarkedChapter !== undefined && activeBook.value.bookmarkedChapter !== null && activeBook.value.bookmarkedChapter === activeBook.value.currentChapter;
+                });
+
+                const toggleBookmarkCurrentChapter = () => {
+                    if (!activeBook.value) return;
+                    if (isCurrentChapterBookmarked.value) {
+                        delete activeBook.value.bookmarkedChapter;
+                        showToast('已移除本章書籤');
+                    } else {
+                        activeBook.value.bookmarkedChapter = activeBook.value.currentChapter;
+                        showToast('已加為章節書籤');
+                    }
+                };
+
+                // Filtered TOC Chapter List
+                const filteredToc = computed(() => {
+                    if (!activeBook.value || !activeBook.value.chapters) return [];
+                    const list = activeBook.value.chapters.map((ch, idx) => ({ 
+                        title: readerSettings.value.autoS2T ? convertToTradText(ch.title) : ch.title, 
+                        originalIndex: idx 
+                    }));
+                    if (!tocSearch.value.trim()) return list;
+                    const q = tocSearch.value.toLowerCase();
+                    return list.filter(item => item.title.toLowerCase().includes(q));
+                });
+
+                // Paragraph Formatting & Smart Line Merging
+                const currentParagraphs = computed(() => {
+                    if (!activeBook.value || !activeBook.value.chapters || !activeBook.value.chapters[activeBook.value.currentChapter]) return [];
+                    let text = activeBook.value.chapters[activeBook.value.currentChapter].content || '';
+                    if (readerSettings.value.autoS2T) {
+                        text = convertToTradText(text);
+                    }
+
+                    if (readerSettings.value.smartMergeLines) {
+                        const rawLines = text.split(/\r?\n/);
+                        let merged = [];
+                        let tempBuffer = "";
+
+                        for (let line of rawLines) {
+                            let trimmed = line.trim();
+                            if (!trimmed) {
+                                if (tempBuffer) {
+                                    merged.push(tempBuffer);
+                                    tempBuffer = "";
+                                }
+                                continue;
+                            }
+
+                            if (!tempBuffer) {
+                                tempBuffer = trimmed;
+                            } else {
+                                const lastChar = tempBuffer.slice(-1);
+                                if (/[。！？”"…!]/.test(lastChar)) {
+                                    merged.push(tempBuffer);
+                                    tempBuffer = trimmed;
+                                } else {
+                                    tempBuffer += trimmed;
+                                }
+                            }
+                        }
+                        if (tempBuffer) merged.push(tempBuffer);
+                        return merged;
+                    }
+
+                    return text.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+                });
+
+                const readerThemeClass = computed(() => {
+                    switch (readerSettings.value.theme) {
+                        case 'dark': return 'theme-dark';
+                        case 'rose': return 'theme-rose';
+                        case 'mint': return 'theme-mint';
+                        case 'sepia': return 'theme-sepia';
+                        case 'eyecare': return 'theme-eyecare';
+                        default: return 'theme-light';
+                    }
+                });
+
+                const readerFontClass = computed(() => {
+                    switch (readerSettings.value.fontFamily) {
+                        case 'serif': return 'font-serif-tc';
+                        case 'kai': return 'font-system-kai';
+                        default: return 'font-sans-tc';
+                    }
+                });
+
+                const readerStyle = computed(() => ({
+                    fontSize: `${readerSettings.value.fontSize}px`,
+                    lineHeight: readerSettings.value.lineHeight
+                }));
+
+                // Auto Chapter Parsing Engine
+                // 從檔名猜測「書名」與「作者」
+                // 支援常見命名慣例：書名（作者）／書名(作者)／書名【作者】／書名[作者]／書名-作者／書名_作者
+                const splitTitleAuthorFromFilename = (name) => {
+                    let title = name.trim();
+
+                    // 括號類：書名（作者）/ 書名(作者) / 書名【作者】/ 書名[作者]
+                    let m = title.match(/^(.{1,60}?)[\(（【\[]\s*(?:作者[:：]?\s*)?([^()（）\[\]【】]{1,20})[\)）\]】]\s*$/);
+                    if (m && m[1].trim() && m[2].trim()) {
+                        return { title: m[1].trim(), author: m[2].trim() };
+                    }
+
+                    // 分隔符號類：書名 - 作者 / 書名_作者 / 書名—作者
+                    m = title.match(/^(.{1,50}?)\s*[-_—－]\s*(.{1,20})$/);
+                    if (m && m[1].trim() && m[2].trim() && !/^\d+$/.test(m[2].trim())) {
+                        return { title: m[1].trim(), author: m[2].trim() };
+                    }
+
+                    return { title, author: '' };
+                };
+
+                // 從內文開頭掃描「作者：XXX」之類的標記，比檔名更可靠
+                const guessAuthorFromContent = (text) => {
+                    if (!text) return '';
+                    const headSample = text.slice(0, 500);
+                    const patterns = [
+                        /作\s*者[:：]\s*([^\n\r]{1,40})/,
+                        /著\s*作\s*者[:：]\s*([^\n\r]{1,40})/,
+                        /原\s*著[:：]\s*([^\n\r]{1,40})/,
+                        /Author[:：]\s*([^\n\r]{1,40})/i
+                    ];
+                    for (const re of patterns) {
+                        const match = headSample.match(re);
+                        if (match && match[1]) {
+                            // 只取第一段（遇到多重空白或標點就視為後面是別的欄位，如「字數：」）
+                            let val = match[1].trim().split(/\s{2,}|[，,。|｜]/)[0].trim();
+                            if (val && val.length <= 20) return val;
+                        }
+                    }
+                    return '';
+                };
+
+                const parseTxtToChapters = (rawText, defaultTitle, author = '佚名', category = '未分類') => {
+                    const lines = rawText.split(/\r?\n/);
+                    const chapterHeaderRegex = /^\s*(第[0-9一二三四五六七八九十百千0-9]+[章卷節回]|Chapter\s+\d+|序章|前言|尾聲|番外)(?:\s.*)?$/i;
+
+                    let chapters = [];
+                    let currentTitle = "第一章 / 前言";
+                    let currentContentLines = [];
+
+                    for (let line of lines) {
+                        const trimmedLine = line.trim();
+                        if (chapterHeaderRegex.test(trimmedLine) && trimmedLine.length < 50) {
+                            if (currentContentLines.length > 0) {
+                                chapters.push({
+                                    title: currentTitle,
+                                    content: currentContentLines.join('\n')
+                                });
+                                currentContentLines = [];
+                            }
+                            currentTitle = trimmedLine;
+                        } else {
+                            currentContentLines.push(line);
+                        }
+                    }
+
+                    if (currentContentLines.length > 0) {
+                        chapters.push({
+                            title: currentTitle,
+                            content: currentContentLines.join('\n')
+                        });
+                    }
+
+                    if (chapters.length <= 1) {
+                        const fullText = rawText;
+                        chapters = [];
+                        const targetSize = 2500;
+                        let start = 0;
+                        let pageNum = 1;
+
+                        while (start < fullText.length) {
+                            let end = Math.min(start + targetSize, fullText.length);
+                            if (end < fullText.length) {
+                                const punctuations = ['。', '！', '？', '”', '"', '\n'];
+                                let bestCut = -1;
+                                for (let i = end; i > start + targetSize - 600; i--) {
+                                    if (punctuations.includes(fullText[i])) {
+                                        bestCut = i + 1;
+                                        break;
+                                    }
+                                }
+                                if (bestCut !== -1) end = bestCut;
+                            }
+                            chapters.push({
+                                title: `第 ${pageNum} 頁`,
+                                content: fullText.substring(start, end)
+                            });
+                            pageNum++;
+                            start = end;
+                        }
+                    }
+
+                    return {
+                        id: 'book_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9),
+                        title: defaultTitle,
+                        author: author || '佚名',
+                        category: category || '未分類',
+                        isFavorite: false,
+                        chapters: chapters,
+                        currentChapter: 0,
+                        coverGradient: gradients[Math.floor(Math.random() * gradients.length)],
+                        description: ''
+                    };
+                };
+
+                // Navigation & Reader Actions
+                const openBook = (id) => {
+                    // 將剛開啟的書移到書庫列表最前面（代表「最近閱讀」）
+                    const idx = books.value.findIndex(b => b.id === id);
+                    if (idx > 0) {
+                        const [book] = books.value.splice(idx, 1);
+                        books.value.unshift(book);
+                    }
+
+                    activeBookId.value = id;
+                    currentView.value = 'reader';
+                    showControls.value = true;
+                    restoreScrollPosition();
+                    if (activeBook.value) recordReadingHistory(activeBook.value, activeBook.value.currentChapter);
+                };
+
+                const closeReader = () => {
+                    saveScrollPosition();
+                    currentView.value = 'library';
+                    stopTTS();
+                    stopAutoScroll();
+                };
+
+                const selectChapter = (index) => {
+                    if (activeBook.value) {
+                        activeBook.value.currentChapter = index;
+                        activeBook.value.scrollPosition = 0;
+                        showTocDrawer.value = false;
+                        scrollToTop();
+                        if (ttsPlaying.value) playTTS();
+                        recordReadingHistory(activeBook.value, index);
+                    }
+                };
+
+                const nextChapter = () => {
+                    if (activeBook.value && activeBook.value.currentChapter < activeBook.value.chapters.length - 1) {
+                        activeBook.value.currentChapter++;
+                        activeBook.value.scrollPosition = 0;
+                        scrollToTop();
+                        if (ttsPlaying.value) playTTS();
+                        recordReadingHistory(activeBook.value, activeBook.value.currentChapter);
+                    }
+                };
+
+                const prevChapter = () => {
+                    if (activeBook.value && activeBook.value.currentChapter > 0) {
+                        activeBook.value.currentChapter--;
+                        activeBook.value.scrollPosition = 0;
+                        scrollToTop();
+                        if (ttsPlaying.value) playTTS();
+                        recordReadingHistory(activeBook.value, activeBook.value.currentChapter);
+                    }
+                };
+
+                // Keyboard navigation: Left/Right arrow keys switch chapters while reading.
+                const handleReaderKeydown = (e) => {
+                    if (currentView.value !== 'reader' || !activeBook.value) return;
+
+                    // Don't hijack arrow keys while the user is typing in a field,
+                    // or while a modal/drawer that has its own inputs is open.
+                    const tag = (e.target && e.target.tagName) || '';
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+                    if (showTocDrawer.value || showBookEditModal.value || showChapterModal.value ||
+                        showSyncModal.value || showPasteModal.value || showCategoryManagerModal.value ||
+                        confirmDialog.value.show) return;
+
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        prevChapter();
+                    } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        nextChapter();
+                    } else if (e.key === 'Escape' && isAutoScrolling.value) {
+                        stopAutoScroll();
+                    }
+                };
+
+                const toggleControls = () => {
+                    // If auto-scroll is running, the first tap on the page just pauses it
+                    // (so it's never "stuck" scrolling with no way to stop it),
+                    // without also toggling the header/footer visibility.
+                    if (isAutoScrolling.value) {
+                        stopAutoScroll();
+                        showToast('已停止自動滾動');
+                        showControls.value = true;
+                        return;
+                    }
+                    showControls.value = !showControls.value;
+                    if (!showControls.value) showReaderSettings.value = false;
+                };
+
+                const scrollToTop = () => {
+                    // Force an immediate, non-animated jump to the top of the page.
+                    // (Some browsers still animate 'instant'/'auto' if called before the
+                    // DOM has updated, so we also set scrollTop directly as a fallback.)
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                    window.scrollTo(0, 0);
+                };
+
+                // Remember exactly how far down the current chapter the user has scrolled,
+                // so reopening this book later resumes at the same spot instead of the top.
+                const saveScrollPosition = () => {
+                    if (currentView.value === 'reader' && activeBook.value) {
+                        activeBook.value.scrollPosition = window.scrollY || document.documentElement.scrollTop || 0;
+                    }
+                };
+
+                // After opening a book, jump straight to its last saved scroll position
+                // (once the reader DOM has actually rendered) instead of always the top.
+                const restoreScrollPosition = () => {
+                    nextTick(() => {
+                        const pos = (activeBook.value && activeBook.value.scrollPosition) || 0;
+                        document.documentElement.scrollTop = pos;
+                        document.body.scrollTop = pos;
+                        window.scrollTo(0, pos);
+                    });
+                };
+
+                // Lightweight throttle: only persist the scroll position at most every 300ms
+                // while the user is actively scrolling through a chapter.
+                let scrollSaveTimer = null;
+                const handleReaderScrollSave = () => {
+                    if (currentView.value !== 'reader' || !activeBook.value) return;
+                    if (scrollSaveTimer) return;
+                    scrollSaveTimer = setTimeout(() => {
+                        scrollSaveTimer = null;
+                        saveScrollPosition();
+                    }, 300);
+                };
+
+                const toggleFavorite = (book) => {
+                    if (!book) return;
+                    book.isFavorite = !book.isFavorite;
+                    showToast(book.isFavorite ? `已收藏《${book.title}》` : `已取消收藏《${book.title}》`);
+                };
+
+                const triggerBookCoverUpload = () => bookCoverInput.value && bookCoverInput.value.click();
+
+                // Resize/compress the uploaded cover image via canvas before storing it as a
+                // base64 data URL, so a handful of book covers don't blow up localStorage.
+                const handleCoverImageUpload = (event) => {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const maxDim = 600;
+                            let { width, height } = img;
+                            if (width > height && width > maxDim) {
+                                height = Math.round(height * (maxDim / width));
+                                width = maxDim;
+                            } else if (height > maxDim) {
+                                width = Math.round(width * (maxDim / height));
+                                height = maxDim;
+                            }
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            editBookForm.value.coverImage = canvas.toDataURL('image/jpeg', 0.8);
+                            editBookForm.value.coverType = 'image';
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    event.target.value = '';
+                };
+
+                const openBookInfo = (book) => {
+                    infoBook.value = book;
+                    showBookInfoModal.value = true;
+                };
+
+                const openEditBookModal = (book) => {
+                    editBookForm.value = {
+                        id: book.id,
+                        title: book.title,
+                        author: book.author || '佚名',
+                        category: book.category || '未分類',
+                        isFavorite: !!book.isFavorite,
+                        newCategoryInline: '',
+                        coverGradient: book.coverGradient || gradients[0],
+                        coverType: book.coverType === 'image' ? 'image' : 'gradient',
+                        coverImage: book.coverImage || null,
+                        description: book.description || ''
+                    };
+                    showBookEditModal.value = true;
+                };
+
+                const saveBookInfo = () => {
+                    const targetBook = books.value.find(b => b.id === editBookForm.value.id);
+                    if (targetBook) {
+                        targetBook.title = editBookForm.value.title;
+                        targetBook.author = editBookForm.value.author;
+                        targetBook.category = editBookForm.value.category;
+                        targetBook.isFavorite = editBookForm.value.isFavorite;
+                        targetBook.coverGradient = editBookForm.value.coverGradient;
+                        // If the user picked "custom image" but never actually uploaded one,
+                        // fall back to the gradient so the card doesn't show a blank cover.
+                        targetBook.coverType = (editBookForm.value.coverType === 'image' && editBookForm.value.coverImage) ? 'image' : 'gradient';
+                        targetBook.coverImage = editBookForm.value.coverImage || null;
+                        targetBook.description = editBookForm.value.description || '';
+                        showToast('已更新書籍資訊與分類');
+                    }
+                    showBookEditModal.value = false;
+                };
+
+                // Non-blocking Deletion with UI Modal
+                const deleteCloudBookChunks = async (bookId, chapterCount = null) => {
+                    if (!db || !syncCode.value) return;
+                    try {
+                        const { doc, deleteDoc } = window.FirebaseModules;
+                        const appId = 'personal-novel-reader';
+                        const CHUNK_SIZE = 15;
+                        // 若已知章節數，精確計算分段數；不知道的話則多刪幾段確保清乾淨
+                        const estimatedChunks = chapterCount ? Math.ceil(chapterCount / CHUNK_SIZE) + 2 : 60;
+                        const deletePromises = [];
+                        for (let i = 0; i < estimatedChunks; i++) {
+                            const chunkDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', `${syncCode.value}_b_${bookId}_c_${i}`);
+                            deletePromises.push(deleteDoc(chunkDocRef).catch(() => {}));
+                        }
+                        await Promise.all(deletePromises);
+                    } catch (err) {
+                        console.error('清除雲端章節內容失敗:', err);
+                    }
+                };
+
+                const confirmDeleteBook = (book) => {
+                    if (!book) return;
+                    triggerConfirm(
+                        '刪除小說',
+                        `確定要刪除《${book.title}》嗎？刪除後無法恢復。`,
+                        () => {
+                            books.value = books.value.filter(b => b.id !== book.id);
+                            // 記錄這本書是「明確被刪除」，而不是同步時漏掉的——
+                            // 這份紀錄之後會一起寫進雲端，讓其他裝置知道這本書是真的該消失，
+                            // 而不會被誤判成同步不完整，反過來又把它補回來。
+                            deletedBookIds.value.add(book.id);
+                            if (activeBookId.value === book.id) {
+                                closeReader();
+                            }
+                            deleteCloudBookChunks(book.id, book.chapters ? book.chapters.length : null);
+                            showToast(`已刪除《${book.title}》`);
+                        }
+                    );
+                };
+
+                // Non-blocking Chapter Deletion with UI Modal
+                const confirmDeleteChapter = (index) => {
+                    if (!activeBook.value || !activeBook.value.chapters) return;
+                    const chapter = activeBook.value.chapters[index];
+                    if (!chapter) return;
+                    if (activeBook.value.chapters.length <= 1) {
+                        showToast('至少需保留一個章節，無法刪除');
+                        return;
+                    }
+                    triggerConfirm(
+                        '刪除章節',
+                        `確定要刪除「${chapter.title}」嗎？刪除後無法恢復。`,
+                        () => {
+                            activeBook.value.chapters.splice(index, 1);
+                            // Keep the reading position valid after removal
+                            if (activeBook.value.currentChapter > index) {
+                                activeBook.value.currentChapter--;
+                            } else if (activeBook.value.currentChapter >= activeBook.value.chapters.length) {
+                                activeBook.value.currentChapter = activeBook.value.chapters.length - 1;
+                            }
+                            showToast(`已刪除「${chapter.title}」`);
+                        }
+                    );
+                };
+
+                const askClearAllData = () => {
+                    triggerConfirm(
+                        '清空所有本地資料',
+                        '警告：確定要清空所有書庫小說、個人分類與閱讀設定嗎？此操作無法撤銷。',
+                        async () => {
+                            const booksToClean = [...books.value];
+                            books.value = [];
+                            customCategories.value = [];
+                            localStorage.removeItem('banxia_novel_db');
+                            await saveToCloud();
+                            // 逐一清除雲端上每本書的章節內容分段，避免殘留垃圾資料
+                            for (const book of booksToClean) {
+                                deleteCloudBookChunks(book.id, book.chapters ? book.chapters.length : null);
+                            }
+                            showToast('所有資料已完全清空');
+                        }
+                    );
+                };
+
+                // 訂閱指定同步碼的雲端文件即時更新。
+                // 每次呼叫都會先取消前一個監聽，確保這台裝置任何時候都只監聽「目前使用中」的那組同步碼，
+                // 不會發生切換同步碼之後仍在背景偷聽舊文件、卻對新文件的變化一無所知的狀況。
+                // 合併「雲端目前的書籍清單」跟「本機手上的書籍清單」，取代直接整包覆蓋。
+                // 原本的做法是收到雲端資料就直接 books.value = remoteBooks，
+                // 這樣一來，只要本機有書「剛新增、還沒真的成功上傳到雲端」（例如上傳中途重新整理頁面、
+                // 或debounce延遲還沒觸發存檔），這時候只要收到任何一次雲端更新通知，
+                // 那本還沒上傳成功的書就會被雲端的舊版本直接洗掉、憑空消失——
+                // 這正是「兩台裝置互相把對方剛新增的書蓋掉」最主要的成因。
+                // 改成合併：本機還標記著「尚未同步成功」(dirty) 的書，一律保留本機版本，
+                // 不會被舊的雲端資料覆蓋；已經確定同步過的書，才用雲端版本為準。
+                const mergeRemoteBooks = (remoteBooks, localBooks, dirtyIds, cloudDeletedIds = new Set()) => {
+                    const remoteMap = new Map(remoteBooks.map(b => [b.id, b]));
+                    const localMap = new Map(localBooks.map(b => [b.id, b]));
+                    const merged = [];
+
+                    for (const remoteBook of remoteBooks) {
+                        if (dirtyIds.has(remoteBook.id) && localMap.has(remoteBook.id)) {
+                            // 本機這本書還有未送出的變更，先保留本機版本
+                            merged.push(localMap.get(remoteBook.id));
+                        } else {
+                            merged.push(remoteBook);
+                        }
+                    }
+
+                    // 補回「雲端書單裡沒有，但本機已經存在」的書。
+                    // 只有這本書真的在「刪除紀錄」(cloudDeletedIds) 裡，才代表有裝置明確刪除過它，
+                    // 這時才讓它跟著消失。除此之外一律視為雲端資料不完整（可能是同步中斷、
+                    // 另一台裝置只上傳了部分書單），保留本機版本，並標記成 dirty 讓它自動補傳、
+                    // 修復雲端缺漏——而不是把它當成「應該被刪除」，直接從本機洗掉。
+                    for (const localBook of localBooks) {
+                        if (!remoteMap.has(localBook.id) && !cloudDeletedIds.has(localBook.id)) {
+                            merged.push(localBook);
+                            dirtyIds.add(localBook.id);
+                        }
+                    }
+
+                    return merged;
+                };
+
+                const subscribeToCloud = (targetSyncCode) => {
+                    if (!db || !targetSyncCode) return;
+                    const { doc, onSnapshot } = window.FirebaseModules;
+                    const appId = 'personal-novel-reader';
+
+                    if (unsubscribeCloudListener) {
+                        unsubscribeCloudListener();
+                        unsubscribeCloudListener = null;
+                    }
+
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', targetSyncCode);
+
+                    unsubscribeCloudListener = onSnapshot(docRef, (snapshot) => {
+                        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) return;
+
+                        if (snapshot.exists()) {
+                            const data = snapshot.data();
+                            if (data.updatedAt) {
+                                lastKnownCloudUpdatedAt = data.updatedAt;
+                            }
+                            if (data.settings) {
+                                readerSettings.value = { ...readerSettings.value, ...data.settings };
+                            }
+                            if (data.customCategories) {
+                                customCategories.value = data.customCategories;
+                            }
+                            if (data.bookMetas) {
+                                const cloudDeletedIds = new Set(data.deletedBookIds || []);
+                                fetchFullBooksFromCloud(data.bookMetas, targetSyncCode).then(remoteBooks => {
+                                    const merged = mergeRemoteBooks(remoteBooks, books.value, dirtyBookContentIds.value, cloudDeletedIds);
+                                    if (JSON.stringify(merged) !== JSON.stringify(books.value)) {
+                                        isRemoteUpdate = true;
+                                        books.value = merged;
+                                        nextTick(() => { isRemoteUpdate = false; });
+                                    }
+                                    // 完整下載並合併完成後，這台裝置才可以開始把自己的變更寫回雲端
+                                    cloudSyncReady = true;
+                                    // 合併後如果手上還有尚未同步成功的書，主動補排一次上傳，
+                                    // 不然它們會一直卡在「本機看得到、雲端沒有」，要等使用者剛好又做了
+                                    // 其他變更才會被動觸發存檔。
+                                    if (dirtyBookContentIds.value.size > 0) {
+                                        debouncedSaveToCloud();
+                                    }
+                                });
+                            } else {
+                                // 雲端文件存在，但目前沒有任何書 -> 沒有東西需要合併，可以直接放行
+                                cloudSyncReady = true;
+                            }
+                        } else {
+                            // 雲端還沒有任何資料（例如全新的同步碼）-> 沒有東西需要合併，可以直接放行
+                            cloudSyncReady = true;
+                        }
+                    }, (err) => {
+                        console.log('Firestore snapshot error:', err);
+                        // 監聽失敗（例如離線、或 Firestore 安全規則拒絕讀取）也要放行，
+                        // 避免本機資料被永久卡住無法儲存；同時跳提示讓使用者知道雲端監聽其實斷了，
+                        // 不是「悄悄地」失敗。
+                        cloudSyncReady = true;
+                        showToast(`雲端同步監聽中斷（${err && (err.code || err.message) || '未知錯誤'}）`);
+                    });
+                };
+
+                const initFirebaseSync = async () => {
+                    if (!window.FirebaseModules) return;
+                    const { initializeApp, getAuth, signInAnonymously, getFirestore, onAuthStateChanged } = window.FirebaseModules;
+                    
+                    try {
+                        const firebaseConfig = {
+                            apiKey: "AIzaSyB4hQ2NG7fhxOPSdPkM7xPF_FQhdb5NqoA",
+                            authDomain: "personal-reading-site.firebaseapp.com",
+                            projectId: "personal-reading-site",
+                            storageBucket: "personal-reading-site.firebasestorage.app",
+                            messagingSenderId: "906029768490",
+                            appId: "1:906029768490:web:e15a0af67ff7488f4a0853"
+                        };
+
+                        const app = initializeApp(firebaseConfig);
+                        db = getFirestore(app);
+                        auth = getAuth(app);
+
+                        // 持續監聽登入狀態：包含一開始的匿名登入、之後使用者用 Google 登入 / 登出，
+                        // 都會觸發這裡，藉此判斷「目前是不是用真實 Google 帳號登入」。
+                        onAuthStateChanged(auth, (user) => {
+                            if (user && !user.isAnonymous) {
+                                currentUser.value = {
+                                    uid: user.uid,
+                                    displayName: user.displayName,
+                                    email: user.email,
+                                    photoURL: user.photoURL
+                                };
+                                subscribeToHistory(user.uid);
+                            } else {
+                                currentUser.value = null;
+                                if (unsubscribeHistoryListener) {
+                                    unsubscribeHistoryListener();
+                                    unsubscribeHistoryListener = null;
+                                }
+                            }
+                        });
+
+                        let user = null;
+                        const userCred = await signInAnonymously(auth);
+                        user = userCred.user;
+
+                        if (!user) return;
+                        isCloudSynced.value = true;
+
+                        subscribeToCloud(syncCode.value);
+
+                        // 保險機制：萬一雲端一直沒有回應（例如離線太久），
+                        // 8 秒後還是放行，避免使用者完全無法儲存本機的變更
+                        setTimeout(() => { cloudSyncReady = true; }, 8000);
+
+                    } catch (err) {
+                        console.error('Firebase init error:', err);
+                        // 連線失敗時一樣要放行，讓 App 至少能正常在本機使用
+                        cloudSyncReady = true;
+                        // 原本這裡只印在 console，畫面上完全看不出雲端到底有沒有連上，
+                        // 導致「同步碼明明一樣卻還是不會同步」的時候完全無從查起。
+                        // 改成直接告訴使用者實際的錯誤代碼，例如網域未授權(auth/unauthorized-domain)、
+                        // API key 限制、或是網路問題，方便對症排查。
+                        showToast(`雲端連線失敗（${err && (err.code || err.message) || '未知錯誤'}），目前僅能使用本機儲存`);
+                    }
+                };
+
+                // 使用 Google 帳號登入：登入後會自動開始記錄與同步「閱讀紀錄」
+                const signInWithGoogle = async () => {
+                    if (!auth) {
+                        showToast('雲端服務尚未就緒，請稍後再試');
+                        return;
+                    }
+                    if (isSigningIn.value) return;
+                    isSigningIn.value = true;
+                    try {
+                        const { GoogleAuthProvider, signInWithPopup } = window.FirebaseModules;
+                        const provider = new GoogleAuthProvider();
+                        await signInWithPopup(auth, provider);
+                        showToast('登入成功，將自動記錄你的閱讀紀錄');
+                    } catch (err) {
+                        console.error('Google 登入失敗:', err);
+                        if (err && err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+                            showToast(`Google 登入失敗（${err && (err.code || err.message) || '未知錯誤'}）`);
+                        }
+                    } finally {
+                        isSigningIn.value = false;
+                    }
+                };
+
+                // 登出 Google 帳號；登出後重新改用匿名身分，讓跨裝置同步碼功能不受影響
+                const signOutUser = async () => {
+                    if (!auth) return;
+                    try {
+                        const { signOut, signInAnonymously } = window.FirebaseModules;
+                        await signOut(auth);
+                        showHistoryModal.value = false;
+                        await signInAnonymously(auth);
+                        showToast('已登出');
+                    } catch (err) {
+                        console.error('登出失敗:', err);
+                        showToast(`登出失敗（${err && (err.code || err.message) || '未知錯誤'}）`);
+                    }
+                };
+
+                // 訂閱雲端的閱讀紀錄（依 Google 帳號 uid 區分，換裝置用同一個帳號登入即可看到紀錄）
+                const subscribeToHistory = (uid) => {
+                    if (!db || !uid) return;
+                    const { doc, onSnapshot } = window.FirebaseModules;
+                    const appId = 'personal-novel-reader';
+
+                    if (unsubscribeHistoryListener) {
+                        unsubscribeHistoryListener();
+                        unsubscribeHistoryListener = null;
+                    }
+
+                    const historyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reading_history', uid);
+                    unsubscribeHistoryListener = onSnapshot(historyDocRef, (snapshot) => {
+                        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) return;
+                        if (snapshot.exists()) {
+                            const data = snapshot.data();
+                            if (Array.isArray(data.entries)) {
+                                readingHistory.value = data.entries;
+                            }
+                        }
+                    }, (err) => {
+                        console.log('閱讀紀錄監聽失敗:', err);
+                    });
+                };
+
+                // 每次開啟書籍 / 切換章節時自動記錄一筆「觀看紀錄」；同一本書只保留最新一筆並更新時間，
+                // 未登入 Google 帳號時僅在本機顯示，不會上傳任何資料到雲端。
+                const recordReadingHistory = (book, chapterIndex) => {
+                    if (!book) return;
+                    const chapter = book.chapters && book.chapters[chapterIndex];
+                    const entry = {
+                        bookId: book.id,
+                        bookTitle: book.title,
+                        chapterIndex: chapterIndex,
+                        chapterTitle: (chapter && chapter.title) || `第 ${chapterIndex + 1} 章`,
+                        timestamp: Date.now()
+                    };
+
+                    const others = readingHistory.value.filter(h => h.bookId !== book.id);
+                    readingHistory.value = [entry, ...others].slice(0, 50);
+
+                    if (currentUser.value && db) {
+                        clearTimeout(historySaveTimeout);
+                        historySaveTimeout = setTimeout(async () => {
+                            try {
+                                const { doc, setDoc } = window.FirebaseModules;
+                                const appId = 'personal-novel-reader';
+                                const historyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reading_history', currentUser.value.uid);
+                                await setDoc(historyDocRef, { entries: readingHistory.value, updatedAt: Date.now() }, { merge: true });
+                            } catch (err) {
+                                console.log('閱讀紀錄寫入雲端失敗:', err);
+                            }
+                        }, 800);
+                    }
+                };
+
+                // 點擊某筆閱讀紀錄時，直接跳回該書該章節
+                const openHistoryEntry = (entry) => {
+                    const book = books.value.find(b => b.id === entry.bookId);
+                    if (!book) {
+                        showToast('找不到這本書，可能已被刪除');
+                        return;
+                    }
+                    showHistoryModal.value = false;
+                    openBook(book.id);
+                    nextTick(() => {
+                        selectChapter(entry.chapterIndex);
+                    });
+                };
+
+                // 將時間戳格式化成人類易讀的樣式：當天顯示時分，非當天顯示月/日
+                const formatHistoryTime = (ts) => {
+                    if (!ts) return '';
+                    const d = new Date(ts);
+                    const now = new Date();
+                    if (d.toDateString() === now.toDateString()) {
+                        return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    return d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+                };
+
+                const fetchFullBooksFromCloud = async (bookMetas, targetSyncCode) => {
+                    if (!db || !bookMetas || !bookMetas.length) return [];
+                    const { doc, getDoc } = window.FirebaseModules;
+                    const appId = 'personal-novel-reader'; // 固定值，確保跟寫入時用的路徑完全一致
+                    const CHUNK_SIZE = 15;
+                    
+                    const reassembledBooks = [];
+                    for (const meta of bookMetas) {
+                        const totalChunks = Math.ceil(meta.chapterCount / CHUNK_SIZE) || 1;
+                        let allChapters = [];
+                        
+                        const chunkPromises = [];
+                        for (let i = 0; i < totalChunks; i++) {
+                            const chunkDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', `${targetSyncCode}_b_${meta.id}_c_${i}`);
+                            chunkPromises.push(getDoc(chunkDocRef));
+                        }
+                        
+                        const chunkSnaps = await Promise.all(chunkPromises);
+                        chunkSnaps.forEach(snap => {
+                            if (snap.exists()) {
+                                const chunkData = snap.data();
+                                if (chunkData.chapters) {
+                                    allChapters.push(...chunkData.chapters);
+                                }
+                            }
+                        });
+
+                        reassembledBooks.push({
+                            id: meta.id,
+                            title: meta.title,
+                            author: meta.author || '佚名',
+                            category: meta.category || '未分類',
+                            isFavorite: !!meta.isFavorite,
+                            coverGradient: meta.coverGradient,
+                            currentChapter: meta.currentChapter,
+                            chapters: allChapters
+                        });
+                    }
+                    return reassembledBooks;
+                };
+
+                // 檢查雲端同步狀態：不會覆蓋本機資料，只是「唯讀」比對雲端書籍清單記錄的章節數，
+                // 跟實際能抓到的章節分段是否相符，藉此直接回答「到底同步好了沒」「哪些書漏傳了」。
+                const verifyCloudSync = async () => {
+                    if (!db) {
+                        showToast('尚未連上雲端服務，請稍後再試');
+                        return;
+                    }
+                    syncVerifyResult.value = { checking: true, checkedAt: '', problems: [], totalBooks: 0 };
+                    try {
+                        const { doc, getDoc } = window.FirebaseModules;
+                        const appId = 'personal-novel-reader';
+                        const mainDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', syncCode.value);
+                        const snap = await getDoc(mainDocRef);
+                        if (!snap.exists() || !snap.data().bookMetas) {
+                            syncVerifyResult.value = { checking: false, checkedAt: new Date().toLocaleString('zh-TW'), problems: [], totalBooks: 0 };
+                            showToast('雲端目前沒有任何書籍紀錄');
+                            return;
+                        }
+
+                        const bookMetas = snap.data().bookMetas;
+                        const CHUNK_SIZE = 15;
+                        const problems = [];
+
+                        for (const meta of bookMetas) {
+                            const expected = meta.chapterCount || 0;
+                            const totalChunks = Math.ceil(expected / CHUNK_SIZE) || 1;
+                            let actual = 0;
+                            const chunkPromises = [];
+                            for (let i = 0; i < totalChunks; i++) {
+                                const chunkDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', `${syncCode.value}_b_${meta.id}_c_${i}`);
+                                chunkPromises.push(getDoc(chunkDocRef));
+                            }
+                            const chunkSnaps = await Promise.all(chunkPromises);
+                            chunkSnaps.forEach(cs => {
+                                if (cs.exists() && cs.data().chapters) actual += cs.data().chapters.length;
+                            });
+                            if (actual < expected) {
+                                problems.push({ title: meta.title, expected, actual });
+                            }
+                        }
+
+                        syncVerifyResult.value = {
+                            checking: false,
+                            checkedAt: new Date().toLocaleString('zh-TW'),
+                            problems,
+                            totalBooks: bookMetas.length
+                        };
+
+                        if (problems.length === 0) {
+                            showToast(`✓ 檢查完成，雲端 ${bookMetas.length} 本書的章節內容都完整`);
+                        } else {
+                            showToast(`檢查完成，發現 ${problems.length} 本書的雲端章節內容不完整`);
+                        }
+                    } catch (e) {
+                        console.error('verifyCloudSync error', e);
+                        syncVerifyResult.value = { checking: false, checkedAt: '', problems: [], totalBooks: 0 };
+                        showToast('檢查失敗，請確認網路連線後再試一次');
+                    }
+                };
+
+                const saveToCloud = async (syncAllChunks = false) => {
+                    if (!db || !syncCode.value || isSavingToCloud) return false;
+                    isSavingToCloud = true;
+                    isSyncing.value = true;
+                    let succeeded = false;
+                    try {
+                        const { doc, setDoc, getDoc } = window.FirebaseModules;
+                        const appId = 'personal-novel-reader';
+                        const mainDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', syncCode.value);
+
+                        // 寫入前先確認雲端是否已被其他裝置更新過（避免用這台裝置手上過期的資料覆蓋掉別人較新的變更）
+                        if (lastKnownCloudUpdatedAt) {
+                            try {
+                                const currentSnap = await getDoc(mainDocRef);
+                                if (currentSnap.exists()) {
+                                    const currentData = currentSnap.data();
+                                    if (currentData.updatedAt && currentData.updatedAt !== lastKnownCloudUpdatedAt) {
+                                        // 偵測到衝突：合併雲端最新版本跟本機手上的資料，
+                                        // 而不是盲目整包覆蓋——不然本機剛新增、還沒成功上傳的書會直接被雲端舊資料洗掉，
+                                        // 這正是「兩台裝置互相把對方剛新增的書蓋掉」的成因。
+                                        lastKnownCloudUpdatedAt = currentData.updatedAt;
+                                        if (currentData.settings) {
+                                            readerSettings.value = { ...readerSettings.value, ...currentData.settings };
+                                        }
+                                        if (currentData.customCategories) {
+                                            customCategories.value = currentData.customCategories;
+                                        }
+                                        if (currentData.bookMetas) {
+                                            const cloudDeletedIds = new Set(currentData.deletedBookIds || []);
+                                            const remoteBooks = await fetchFullBooksFromCloud(currentData.bookMetas, syncCode.value);
+                                            const merged = mergeRemoteBooks(remoteBooks, books.value, dirtyBookContentIds.value, cloudDeletedIds);
+                                            isRemoteUpdate = true;
+                                            books.value = merged;
+                                            nextTick(() => { isRemoteUpdate = false; });
+                                        }
+                                        showToast('偵測到其他裝置有較新的變更，已自動合併雲端版本');
+                                        isSavingToCloud = false;
+                                        isSyncing.value = false;
+                                        // 合併後如果手上還有尚未同步成功的書，主動排一次重新上傳，
+                                        // 不然剛才這次被取消的變更就會一直卡在本機、永遠不會真的補傳上去。
+                                        if (dirtyBookContentIds.value.size > 0) {
+                                            debouncedSaveToCloud();
+                                        }
+                                        return false;
+                                    }
+                                }
+                            } catch (checkErr) {
+                                console.error('檢查雲端版本失敗:', checkErr);
+                            }
+                        }
+                        
+                        const bookMetas = books.value.map(b => ({
+                            id: b.id,
+                            title: b.title,
+                            author: b.author || '佚名',
+                            category: b.category || '未分類',
+                            isFavorite: !!b.isFavorite,
+                            coverGradient: b.coverGradient,
+                            currentChapter: b.currentChapter,
+                            chapterCount: b.chapters ? b.chapters.length : 0
+                        }));
+
+                        // 重要：章節內容一定要「先」上傳完成，「再」更新書籍清單(bookMetas)。
+                        // 因為其他裝置是監聽這份書籍清單文件（onSnapshot）來決定要不要下載章節內容的，
+                        // 如果順序相反（先更新清單、章節內容還在慢慢傳），
+                        // 監聽中的裝置就會在章節分段還沒寫完的空檔被觸發，抓到「章節數對、內容是空的」的半成品，
+                        // 並把這個半成品存回自己的本機——這正是「其他裝置章節數變成 0」最常見的成因。
+                        const CHUNK_SIZE = 15;
+                        const booksToSync = syncAllChunks 
+                            ? books.value 
+                            : books.value.filter(b => dirtyBookContentIds.value.has(b.id));
+
+                        if (syncAllChunks) {
+                            syncProgress.value = { active: true, current: 0, total: booksToSync.length };
+                        }
+
+                        const syncedBookIds = [];
+                        for (const book of booksToSync) {
+                            if (!book.chapters) continue;
+                            const totalChunks = Math.ceil(book.chapters.length / CHUNK_SIZE) || 1;
+                            for (let i = 0; i < totalChunks; i++) {
+                                const chunkChapters = book.chapters.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                                const chunkDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', `${syncCode.value}_b_${book.id}_c_${i}`);
+                                await setDoc(chunkDocRef, {
+                                    bookId: book.id,
+                                    chunkIndex: i,
+                                    totalChunks,
+                                    chapters: chunkChapters
+                                });
+                            }
+                            syncedBookIds.push(book.id);
+                            if (syncAllChunks) {
+                                syncProgress.value = { ...syncProgress.value, current: syncProgress.value.current + 1 };
+                            }
+                        }
+
+                        // 章節分段都確定寫入成功後，才把書籍清單（含章節數）一次寫進去，
+                        // 讓其他裝置監聽到變動時，需要的章節分段一定已經存在。
+                        const newUpdatedAt = new Date().toISOString();
+                        await setDoc(mainDocRef, {
+                            bookMetas,
+                            settings: readerSettings.value,
+                            customCategories: customCategories.value,
+                            deletedBookIds: Array.from(deletedBookIds.value),
+                            updatedAt: newUpdatedAt
+                        }, { merge: true });
+                        lastKnownCloudUpdatedAt = newUpdatedAt;
+
+                        // 只清除「這幾本」已確定同步成功的書的 dirty 標記，而不是整包清空。
+                        // 因為上傳這幾本書的章節可能要花好幾秒，如果這段時間使用者又匯入了
+                        // 別本新書，那本新書的 dirty 標記絕對不能被這裡的 clear() 一起洗掉，
+                        // 不然那本新書的內容就永遠不會真的被上傳到雲端（只有書名會同步過去）。
+                        syncedBookIds.forEach(id => dirtyBookContentIds.value.delete(id));
+
+                        if (syncAllChunks) {
+                            lastFullSyncAt.value = new Date().toLocaleString('zh-TW');
+                            localStorage.setItem('novel_reader_last_full_sync', lastFullSyncAt.value);
+                            syncProgress.value = { active: false, current: 0, total: 0 };
+                        }
+                        succeeded = true;
+                    } catch (e) {
+                        console.error('Save to cloud error', e);
+                        showToast(`上傳雲端失敗（${e && (e.code || e.message) || '未知錯誤'}），本機資料已保留`);
+                    } finally {
+                        isSavingToCloud = false;
+                        syncProgress.value = { active: false, current: 0, total: 0 };
+                        setTimeout(() => { isSyncing.value = false; }, 500);
+                    }
+                    return succeeded;
+                };
+
+                const debouncedSaveToCloud = (syncAllChunks = false) => {
+                    if (cloudSaveTimeout) clearTimeout(cloudSaveTimeout);
+                    cloudSaveTimeout = setTimeout(() => {
+                        saveToCloud(syncAllChunks);
+                    }, 2500);
+                };
+
+                // 手動強制完整同步：無視 dirty 標記，把本機目前所有書籍的章節內容全部重新上傳雲端。
+                // 用於修復「書籍數量正確，但部分書籍章節在其他裝置變成 0」的情況——
+                // 常見成因有兩種：
+                // 1) 該本書的章節在上傳完成前，分頁就被關閉或重新整理；
+                // 2) 章節內容還在陸續上傳時，其他裝置剛好監聽到書籍清單已更新，提前抓到「章節數對、內容是空的」半成品。
+                const forceFullCloudResync = async () => {
+                    if (!db) {
+                        showToast('尚未連上雲端服務，請稍後再試');
+                        return;
+                    }
+
+                    // 安全防呆：這個按鈕會把「本機目前的書籍清單」整包覆蓋雲端。
+                    // 如果本機書庫是空的（例如在一台還沒載入過雲端資料的新裝置上誤按），
+                    // 繼續執行就會把雲端原本的書籍紀錄整個清空——這正是造成
+                    // 「雲端共 0 本」的成因。因此本機沒有任何書籍時直接擋下，不執行上傳。
+                    if (!books.value || books.value.length === 0) {
+                        showToast('本機書庫目前是空的，已取消強制同步，以免清空雲端資料。請改到有完整書籍的裝置上執行。');
+                        return;
+                    }
+
+                    // 如果背景剛好有一次自動同步正在進行，先等它結束，避免這次的強制同步被悄悄跳過
+                    if (isSavingToCloud) {
+                        showToast('目前有其他同步正在進行，稍候會自動接續...');
+                        let waited = 0;
+                        while (isSavingToCloud && waited < 15000) {
+                            await new Promise(r => setTimeout(r, 300));
+                            waited += 300;
+                        }
+                    }
+
+                    if (cloudSaveTimeout) {
+                        clearTimeout(cloudSaveTimeout);
+                        cloudSaveTimeout = null;
+                    }
+                    showToast(`開始完整重新上傳 ${books.value.length} 本書，請留在此頁面直到完成...`);
+
+                    // saveToCloud 在寫入前發現雲端剛好被更新過時（哪怕只早了零點幾秒——
+                    // 例如背景自動同步、或另一個分頁剛好也在存檔），基於安全考量會先把雲端最新版本
+                    // 合併進本機，然後直接放棄這次寫入，回傳 false。
+                    // 但合併完成後 lastKnownCloudUpdatedAt 已經是最新的了，理論上馬上重試就會成功，
+                    // 不需要讓使用者自己手動再按一次、或誤以為同步失敗、資料壞掉。
+                    // 這裡自動重試幾次，只有連續都失敗才真的告訴使用者要稍後再試。
+                    let ok = false;
+                    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+                        if (attempt > 0) {
+                            await new Promise(r => setTimeout(r, 800));
+                            books.value.forEach(b => dirtyBookContentIds.value.add(b.id));
+                        }
+                        ok = await saveToCloud(true);
+                    }
+                    if (ok) {
+                        showToast('✓ 完整同步已完成，其他裝置可重新載入書庫');
+                    } else {
+                        showToast('同步中途被取消（偵測到其他裝置有更新的資料），請稍後再試一次');
+                    }
+                };
+
+                const loadCloudDataByCode = async () => {
+                    if (!inputSyncCode.value.trim() || !db) return;
+                    isSyncing.value = true;
+                    try {
+                        const { doc, getDoc } = window.FirebaseModules;
+                        const appId = 'personal-novel-reader'; // 固定值，確保跟寫入時用的路徑完全一致
+                        const targetCode = inputSyncCode.value.trim();
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_libraries', targetCode);
+                        const snap = await getDoc(docRef);
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            // 標記成「遠端資料」，避免下載完成、指派給 books.value 時，
+                            // 觸發自動存檔監聽器把這份剛下載的資料誤判成本機變更、立刻又存回雲端。
+                            isRemoteUpdate = true;
+                            if (data.bookMetas) {
+                                const remoteBooks = await fetchFullBooksFromCloud(data.bookMetas, targetCode);
+                                books.value = remoteBooks;
+                            } else {
+                                books.value = [];
+                            }
+                            if (data.settings) {
+                                readerSettings.value = { ...readerSettings.value, ...data.settings };
+                            }
+                            if (data.customCategories) {
+                                customCategories.value = data.customCategories;
+                            }
+                            // 記住這份雲端資料的版本時間戳，讓之後 saveToCloud 的衝突偵測可以正確比對，
+                            // 不然這個時間戳會一直是 null／舊值，導致這台裝置之後每次自動存檔都偵測不到
+                            // 「雲端其實已被其他裝置更新過」，變成盲目覆蓋雲端資料。
+                            lastKnownCloudUpdatedAt = data.updatedAt || null;
+                            nextTick(() => { isRemoteUpdate = false; });
+
+                            syncCode.value = targetCode;
+                            localStorage.setItem('novel_reader_sync_code', targetCode);
+
+                            // 切換同步碼後一定要重新訂閱新同步碼的雲端即時監聽，
+                            // 不然這台裝置會繼續聽著「舊同步碼」的文件，完全收不到新同步碼那邊
+                            // 其他裝置之後的更新，卻仍照常把本機資料整包存回新同步碼——
+                            // 這正是「換到另一台裝置後，原本裝置的書不見了」的根本成因。
+                            subscribeToCloud(targetCode);
+
+                            showToast('已同步並載入雲端書庫');
+                            showSyncModal.value = false;
+                        } else {
+                            showToast('找不到該同步碼的紀錄');
+                        }
+                    } catch (e) {
+                        console.error('Load cloud error:', e);
+                        showToast(`載入失敗（${e && (e.code || e.message) || '未知錯誤'}），請稍後再試`);
+                    } finally {
+                        isSyncing.value = false;
+                    }
+                };
+
+                const copySyncCode = () => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(syncCode.value);
+                    } else {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = syncCode.value;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    }
+                    showToast('已複製同步碼到剪貼簿');
+                };
+
+                // Chapter Editing, TTS & File Handlers
+                const openAddChapterModal = () => {
+                    isEditingChapter.value = false;
+                    chapterForm.value = {
+                        title: `第 ${activeBook.value ? activeBook.value.chapters.length + 1 : 1} 章`,
+                        content: ''
+                    };
+                    showChapterModal.value = true;
+                };
+
+                const openEditChapterModal = () => {
+                    if (!activeBook.value || !activeBook.value.chapters[activeBook.value.currentChapter]) return;
+                    isEditingChapter.value = true;
+                    const currentCh = activeBook.value.chapters[activeBook.value.currentChapter];
+                    chapterForm.value = {
+                        title: currentCh.title,
+                        content: currentCh.content
+                    };
+                    showChapterModal.value = true;
+                };
+
+                const saveChapter = () => {
+                    if (!chapterForm.value.title || !chapterForm.value.content) {
+                        showToast('請填寫章節標題與內容');
+                        return;
+                    }
+
+                    if (isEditingChapter.value) {
+                        activeBook.value.chapters[activeBook.value.currentChapter] = {
+                            title: chapterForm.value.title,
+                            content: chapterForm.value.content
+                        };
+                        if (activeBook.value) dirtyBookContentIds.value.add(activeBook.value.id);
+                        showToast('章節修訂完成');
+                    } else {
+                        activeBook.value.chapters.push({
+                            title: chapterForm.value.title,
+                            content: chapterForm.value.content
+                        });
+                        activeBook.value.currentChapter = activeBook.value.chapters.length - 1;
+                        if (activeBook.value) dirtyBookContentIds.value.add(activeBook.value.id);
+                        showToast('已新增章節');
+                    }
+                    showChapterModal.value = false;
+                    showTocDrawer.value = false;
+                    scrollToTop();
+                };
+
+                const convertChapterFormToTrad = () => {
+                    chapterForm.value.title = convertToTradText(chapterForm.value.title);
+                    chapterForm.value.content = convertToTradText(chapterForm.value.content);
+                    showToast('已轉為繁體字');
+                };
+
+                const convertPasteFormToTrad = () => {
+                    pasteForm.value.title = convertToTradText(pasteForm.value.title);
+                    pasteForm.value.content = convertToTradText(pasteForm.value.content);
+                    showToast('已轉為繁體字');
+                };
+
+                const triggerFileUpload = () => fileInput.value && fileInput.value.click();
+
+                const readFileAsText = (file) => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsText(file, 'utf-8');
+                    });
+                };
+
+                const importFilesAsBooks = async (fileList) => {
+                    const imported = [];
+                    for (const file of fileList) {
+                        try {
+                            let content = await readFileAsText(file);
+                            const rawName = file.name.replace(/\.txt$/i, '');
+                            let bookTitle = rawName;
+                            let detectedAuthor = '';
+
+                            if (importSettings.value.autoDetectAuthor) {
+                                // 優先從內文找「作者：」標記，找不到再嘗試從檔名拆解
+                                detectedAuthor = guessAuthorFromContent(content);
+                                if (!detectedAuthor) {
+                                    const parsed = splitTitleAuthorFromFilename(rawName);
+                                    if (parsed.author) {
+                                        bookTitle = parsed.title;
+                                        detectedAuthor = parsed.author;
+                                    }
+                                }
+                            }
+
+                            if (importSettings.value.autoConvertTraditional) {
+                                content = convertToTradText(content);
+                                bookTitle = convertToTradText(bookTitle);
+                                if (detectedAuthor) detectedAuthor = convertToTradText(detectedAuthor);
+                            }
+
+                            const newBook = parseTxtToChapters(content, bookTitle, detectedAuthor || '佚名', importSettings.value.defaultCategory);
+                            imported.push(newBook);
+                        } catch (err) {
+                            console.error('讀取檔案失敗:', file.name, err);
+                            showToast(`《${file.name}》讀取失敗`);
+                        }
+                    }
+                    return imported;
+                };
+
+                const handleFileUpload = async (event) => {
+                    const files = Array.from(event.target.files || []);
+                    if (!files.length) return;
+
+                    // 重要：一定要先把每個檔案「完整解析」成最終的書籍物件（含依內文/檔名判斷出來的
+                    // 真正書名，以及簡轉繁之後的書名），再拿這個「最終書名」去判斷是否重複。
+                    // 如果直接拿原始檔名比對，遇到像「書名 - 作者.txt」這種檔名，
+                    // 或是開啟了自動簡轉繁的情況，檔名跟書庫裡實際存的書名對不起來，
+                    // 重複就會判斷失敗、被誤認成新書而直接匯入，也完全不會跳出任何提醒。
+                    const allParsed = await importFilesAsBooks(files);
+
+                    const existingTitles = new Set(books.value.map(b => (b.title || '').trim().toLowerCase()));
+                    const seenInThisBatch = new Set();
+                    const uniqueBooks = [];
+                    const duplicateTitles = [];
+
+                    for (const book of allParsed) {
+                        const normalizedTitle = (book.title || '').trim().toLowerCase();
+                        if (existingTitles.has(normalizedTitle) || seenInThisBatch.has(normalizedTitle)) {
+                            duplicateTitles.push(book.title);
+                        } else {
+                            uniqueBooks.push(book);
+                            seenInThisBatch.add(normalizedTitle);
+                        }
+                    }
+
+                    // 自動擋下重複書名，只匯入書庫裡沒有的那些，不需要使用者額外確認。
+                    uniqueBooks.forEach(b => dirtyBookContentIds.value.add(b.id));
+                    if (uniqueBooks.length) {
+                        books.value.unshift(...uniqueBooks);
+                    }
+
+                    if (duplicateTitles.length) {
+                        const listText = duplicateTitles.map(t => `《${t}》`).join('、');
+                        if (uniqueBooks.length) {
+                            showToast(`已匯入 ${uniqueBooks.length} 本書，已自動略過 ${duplicateTitles.length} 本重複書名：${listText}`);
+                        } else {
+                            showToast(`書庫中已有同名書籍，未新增：${listText}`);
+                        }
+                        if (uniqueBooks.length === 1) {
+                            openBook(uniqueBooks[0].id);
+                        }
+                    } else if (uniqueBooks.length) {
+                        if (uniqueBooks.length === 1) {
+                            showToast(`已成功匯入《${uniqueBooks[0].title}》`);
+                            openBook(uniqueBooks[0].id);
+                        } else {
+                            showToast(`已成功匯入 ${uniqueBooks.length} 本書`);
+                        }
+                    }
+
+                    // 允許重複選取同一批檔案時仍能觸發 change 事件
+                    event.target.value = '';
+                };
+
+                const savePastedBook = () => {
+                    if (!pasteForm.value.title || !pasteForm.value.content) {
+                        showToast('請填寫完整書名與內容');
+                        return;
+                    }
+
+                    const normalizedTitle = pasteForm.value.title.trim().toLowerCase();
+                    const isDuplicate = books.value.some(b => (b.title || '').trim().toLowerCase() === normalizedTitle);
+
+                    const doSave = () => {
+                        const newBook = parseTxtToChapters(
+                            pasteForm.value.content, 
+                            pasteForm.value.title, 
+                            pasteForm.value.author, 
+                            pasteForm.value.category
+                        );
+                        dirtyBookContentIds.value.add(newBook.id);
+                        books.value.unshift(newBook);
+                        showToast(`已成功建立《${newBook.title}》`);
+                        showPasteModal.value = false;
+                        pasteForm.value = { title: '', author: '', content: '', category: '未分類', newCategoryInline: '' };
+                        openBook(newBook.id);
+                    };
+
+                    if (isDuplicate) {
+                        // 自動擋下同名書籍，不彈確認視窗；使用者若真的要新增，
+                        // 只要把書名稍微改一下（例如加上版本、譯者）即可再次儲存。
+                        showToast(`書庫中已有《${pasteForm.value.title}》，未新增。如需保留兩份，請修改書名後再試一次`);
+                    } else {
+                        doSave();
+                    }
+                };
+
+                const toggleTTS = () => {
+                    if (ttsPlaying.value) {
+                        stopTTS();
+                    } else {
+                        playTTS();
+                    }
+                };
+
+                const playTTS = () => {
+                    if (!('speechSynthesis' in window)) {
+                        showToast('您的瀏覽器不支援語音朗讀');
+                        return;
+                    }
+                    stopTTS();
+                    const chapter = activeBook.value?.chapters[activeBook.value.currentChapter];
+                    if (!chapter) return;
+                    const textToRead = readerSettings.value.autoS2T ? convertToTradText(chapter.content) : chapter.content;
+                    currentUtterance = new SpeechSynthesisUtterance(textToRead);
+                    currentUtterance.lang = 'zh-TW';
+                    currentUtterance.onend = () => { ttsPlaying.value = false; };
+                    currentUtterance.onerror = () => { ttsPlaying.value = false; };
+                    ttsPlaying.value = true;
+                    window.speechSynthesis.speak(currentUtterance);
+                };
+
+                const stopTTS = () => {
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                    }
+                    ttsPlaying.value = false;
+                };
+
+                const loadSampleBook = () => {
+                    const sampleText = `第一章 晨曦之夜
+這是全新升級的個人小說閱讀網。
+介面採用高質感暖奶油色與莫蘭迪色調調配，專為追求精緻閱讀感的你而設計。
+
+第二章 跨裝置雲端儲存
+當你開啟此網頁時，你的書籍與進度已自動連結雲端！
+不論是刷新網頁、更換瀏覽器，或是用手機與電腦閱讀，點擊「跨裝置同步」輸入專屬同步碼，即可隨時無縫接續閱讀進度。`;
+
+                    const sample = parseTxtToChapters(sampleText, '首爾月光下的漫步', '달빛', '日常/輕小說');
+                    sample.isFavorite = true;
+                    dirtyBookContentIds.value.add(sample.id);
+                    books.value.unshift(sample);
+                    if (!customCategories.value.includes('日常/輕小說')) {
+                        customCategories.value.push('日常/輕小說');
+                    }
+                    showToast('已載入範例小說');
+                };
+
+                const exportData = () => {
+                    const dataStr = JSON.stringify({ books: books.value, settings: readerSettings.value, customCategories: customCategories.value, importSettings: importSettings.value }, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `novel_reader_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    showToast('資料備份匯出成功');
+                };
+
+                const triggerImportData = () => backupFileInput.value && backupFileInput.value.click();
+
+                const importData = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        try {
+                            const parsed = JSON.parse(evt.target.result);
+                            if (parsed.books) {
+                                books.value = parsed.books;
+                                parsed.books.forEach(b => dirtyBookContentIds.value.add(b.id));
+                            }
+                            if (parsed.settings) readerSettings.value = parsed.settings;
+                            if (parsed.customCategories) customCategories.value = parsed.customCategories;
+                            if (parsed.importSettings) importSettings.value = { ...importSettings.value, ...parsed.importSettings };
+                            showToast('成功匯入備份資料');
+                        } catch (err) {
+                            showToast('無法解析備份檔案');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+                const showToast = (msg) => {
+                    toastMessage.value = msg;
+                    setTimeout(() => { toastMessage.value = ''; }, 3000);
+                };
+
+                const interruptAutoScroll = () => { if (isAutoScrolling.value) stopAutoScroll(); };
+
+                // Lifecycle & Watchers
+                onMounted(() => {
+                    initOpenCC();
+                    const saved = localStorage.getItem('banxia_novel_db');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            books.value = parsed.books || [];
+                            readerSettings.value = { ...readerSettings.value, ...(parsed.settings || {}) };
+                            if (parsed.customCategories) customCategories.value = parsed.customCategories;
+                            if (parsed.importSettings) importSettings.value = { ...importSettings.value, ...parsed.importSettings };
+                            // 還原上次尚未成功同步到雲端的書籍清單，讓連線後可以自動補傳，
+                            // 避免因為上次關閉分頁時同步還沒做完，導致章節內容永遠遺失在雲端。
+                            if (Array.isArray(parsed.pendingCloudSyncIds)) {
+                                parsed.pendingCloudSyncIds.forEach(id => dirtyBookContentIds.value.add(id));
+                            }
+                            if (Array.isArray(parsed.deletedBookIds)) {
+                                parsed.deletedBookIds.forEach(id => deletedBookIds.value.add(id));
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse local novel data', e);
+                        }
+                    }
+
+                    if (window.FirebaseModules) {
+                        initFirebaseSync();
+                    } else {
+                        window.addEventListener('firebase-ready', initFirebaseSync);
+                    }
+
+                    // 主動偵測「雲端根本沒連上」的情況：如果過了幾秒，isCloudSynced 仍然是 false，
+                    // 代表匿名登入或初始化在某個環節失敗了（例如目前開啟頁面的網域沒有被加進
+                    // Firebase 專案的授權網域清單）。直接跳提示，不要讓使用者只能從標題旁邊那顆
+                    // 小綠點自己猜「到底有沒有連上雲端」。
+                    setTimeout(() => {
+                        if (!isCloudSynced.value) {
+                            showToast('尚未連上雲端服務，目前僅能使用本機儲存（無法跨裝置同步）');
+                        }
+                    }, 5000);
+
+                    // 若上次還有書籍的章節內容尚未成功同步到雲端（例如上次同步途中就關閉分頁），
+                    // 等雲端連線穩定後自動補傳一次，避免章節內容永遠停留在「只有書名、沒有內容」的狀態。
+                    setTimeout(() => {
+                        if (dirtyBookContentIds.value.size > 0 && cloudSyncReady) {
+                            debouncedSaveToCloud();
+                        }
+                    }, 9000);
+
+                    window.addEventListener('keydown', handleReaderKeydown);
+
+                    // A genuine manual scroll attempt (mouse wheel, or a real touch-drag)
+                    // immediately interrupts auto-scroll.
+                    window.addEventListener('wheel', interruptAutoScroll, { passive: true });
+                    window.addEventListener('touchmove', interruptAutoScroll, { passive: true });
+
+                    // Keep the current chapter's scroll position saved as the user reads,
+                    // and also flush it right before the tab closes/refreshes.
+                    window.addEventListener('scroll', handleReaderScrollSave, { passive: true });
+                    window.addEventListener('beforeunload', saveScrollPosition);
+                });
+
+                onUnmounted(() => {
+                    stopAutoScroll();
+                    window.removeEventListener('keydown', handleReaderKeydown);
+                    window.removeEventListener('wheel', interruptAutoScroll);
+                    window.removeEventListener('touchmove', interruptAutoScroll);
+                    window.removeEventListener('scroll', handleReaderScrollSave);
+                    window.removeEventListener('beforeunload', saveScrollPosition);
+                    if (unsubscribeHistoryListener) unsubscribeHistoryListener();
+                });
+
+                watch([books, readerSettings, customCategories, importSettings], () => {
+                    try {
+                        localStorage.setItem('banxia_novel_db', JSON.stringify({
+                            books: books.value,
+                            settings: readerSettings.value,
+                            customCategories: customCategories.value,
+                            importSettings: importSettings.value,
+                            // 記錄哪些書的章節內容還沒成功上傳雲端；就算分頁被關閉，下次開啟也能接著補傳，
+                            // 避免書籍在其他裝置上變成「有書名但章節數是 0」。
+                            pendingCloudSyncIds: Array.from(dirtyBookContentIds.value),
+                            deletedBookIds: Array.from(deletedBookIds.value)
+                        }));
+                    } catch (err) {
+                        console.warn('LocalStorage limit exceeded', err);
+                    }
+                    if (!isRemoteUpdate && cloudSyncReady) {
+                        debouncedSaveToCloud();
+                    }
+                }, { deep: true });
+
+                return {
+                    currentView,
+                    gradients,
+                    getCoverIcon,
+                    books,
+                    activeBookId,
+                    activeBook,
+                    filteredBooks,
+                    searchQuery,
+                    selectedCategory,
+                    fullCategoriesList,
+                    customCategories,
+                    newCategoryInput,
+                    showCategoryManagerModal,
+                    confirmDialog,
+                    executeConfirmAction,
+                    executeConfirmSecondaryAction,
+                    getCategoryCount,
+                    showControls,
+                    showTocDrawer,
+                    showReaderSettings,
+                    showPasteModal,
+                    showBookEditModal,
+                    showBookInfoModal,
+                    infoBook,
+                    showChapterModal,
+                    showSyncModal,
+                    isEditingChapter,
+                    tocSearch,
+                    filteredToc,
+                    readerSettings,
+                    readerThemeClass,
+                    readerFontClass,
+                    readerStyle,
+                    currentParagraphs,
+                    pasteForm,
+                    editBookForm,
+                    chapterForm,
+                    toastMessage,
+                    fileInput,
+                    bookCoverInput,
+                    backupFileInput,
+                    ttsPlaying,
+                    syncCode,
+                    inputSyncCode,
+                    isSyncing,
+                    isCloudSynced,
+                    currentUser,
+                    isSigningIn,
+                    showHistoryModal,
+                    readingHistory,
+                    signInWithGoogle,
+                    signOutUser,
+                    openHistoryEntry,
+                    formatHistoryTime,
+                    isAutoScrolling,
+                    autoScrollSpeed,
+                    addNewCategory,
+                    addInlineCategoryToEdit,
+                    addInlineCategoryToPaste,
+                    removeCustomCategory,
+                    importSettings,
+                    editingCategoryOriginal,
+                    categoryEditValue,
+                    startRenameCategory,
+                    cancelRenameCategory,
+                    confirmRenameCategory,
+                    showAuthorManagerModal,
+                    authorList,
+                    authorRenameTarget,
+                    authorRenameValue,
+                    startRenameAuthor,
+                    cancelRenameAuthor,
+                    confirmRenameAuthor,
+                    libraryStats,
+                    toggleAutoScroll,
+                    stopAutoScroll,
+                    isCurrentChapterBookmarked,
+                    toggleBookmarkCurrentChapter,
+                    adjustFontSize,
+                    toggleEyeCareMode,
+                    triggerFileUpload,
+                    handleFileUpload,
+                    savePastedBook,
+                    openBook,
+                    openBookInfo,
+                    closeReader,
+                    confirmDeleteBook,
+                    confirmDeleteChapter,
+                    askClearAllData,
+                    getBookProgress,
+                    selectChapter,
+                    nextChapter,
+                    prevChapter,
+                    toggleControls,
+                    loadSampleBook,
+                    toggleTTS,
+                    exportData,
+                    triggerImportData,
+                    importData,
+                    openAddChapterModal,
+                    openEditChapterModal,
+                    saveChapter,
+                    convertChapterFormToTrad,
+                    convertPasteFormToTrad,
+                    copySyncCode,
+                    loadCloudDataByCode,
+                    forceFullCloudResync,
+                    verifyCloudSync,
+                    syncProgress,
+                    lastFullSyncAt,
+                    syncVerifyResult,
+                    toggleFavorite,
+                    openEditBookModal,
+                    saveBookInfo,
+                    triggerBookCoverUpload,
+                    handleCoverImageUpload
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
